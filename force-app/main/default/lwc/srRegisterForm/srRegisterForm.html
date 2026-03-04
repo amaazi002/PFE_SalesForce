@@ -1,0 +1,42 @@
+<template>
+  <section class="modal slds-modal slds-fade-in-open" role="dialog" aria-modal="true">
+    <div class="slds-modal__container">
+      <header class="slds-modal__header">
+        <h2 class="slds-text-heading_medium">Créer un compte</h2>
+        <button class="slds-button slds-button_icon slds-modal__close" title="Fermer" onclick={close}>
+          <lightning-icon icon-name="utility:close" alternative-text="Fermer" size="small"></lightning-icon>
+        </button>
+      </header>
+
+      <div class="slds-modal__content slds-p-around_medium">
+        <div class="slds-grid slds-wrap slds-gutters">
+          <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+            <lightning-input type="text" label="Prénom" value={firstName} onchange={onFirst}></lightning-input>
+          </div>
+          <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+            <lightning-input type="text" label="Nom" value={lastName} onchange={onLast}></lightning-input>
+          </div>
+          <div class="slds-col slds-size_1-of-1">
+            <lightning-input type="email" label="Email" value={email} onchange={onEmail}></lightning-input>
+          </div>
+          <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+            <lightning-input type="password" label="Mot de passe" value={password} onchange={onPass}></lightning-input>
+          </div>
+          <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+            <lightning-input type="password" label="Confirmer le mot de passe" value={confirm} onchange={onConfirm}></lightning-input>
+          </div>
+        </div>
+
+        <template if:true={hasErrors}>
+          <div class="slds-m-top_small slds-text-color_error">{errorText}</div>
+        </template>
+      </div>
+
+      <footer class="slds-modal__footer">
+        <lightning-button label="Annuler" onclick={close}></lightning-button>
+        <lightning-button class="slds-m-left_small" variant="brand" label="Créer mon compte" onclick={register}></lightning-button>
+      </footer>
+    </div>
+  </section>
+  <div class="slds-backdrop slds-backdrop_open"></div>
+</template>

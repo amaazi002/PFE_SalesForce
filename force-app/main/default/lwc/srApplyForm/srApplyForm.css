@@ -1,0 +1,35 @@
+.modal .slds-modal__container { max-width: 720px; }
+
+/* Dropzone */
+.dz {
+  margin-top: 12px;
+  border: 2px dashed #c9ccd2;
+  border-radius: 8px;
+  background: #fbfbfb;
+  padding: 16px;
+  text-align: center;
+  transition: background .12s ease, border-color .12s ease, box-shadow .12s ease;
+}
+.dz .dz-icon {
+  font-size: 24px;
+  line-height: 1;
+  margin-bottom: 4px;
+  color: #6b6f76;
+}
+.dz .dz-text {
+  color: #2d2f33;
+  font-size: .95rem;
+}
+.dz .dz-hint {
+  color: #6b6f76;
+  font-size: .85rem;
+}
+.dz--drag {
+  background: #f3f6ff;
+  border-color: #1b5fef;
+  box-shadow: 0 0 0 2px rgba(27,95,239,.15) inset;
+}
+.dz--error { border-color: #ea001e; background: #fff5f6; }
+.dz--ok    { border-color: #2e844a; background: #f3fbf5; }
+.dz-error  { margin-top: 8px; color: #ea001e; font-weight: 600; }
+.dz-ok     { margin-top: 8px; color: #2e844a; font-weight: 600; }       

@@ -1,0 +1,4 @@
+.isClosed {
+    color: var(--lwc-colorTextWeak);
+    opacity: 0.65;
+}

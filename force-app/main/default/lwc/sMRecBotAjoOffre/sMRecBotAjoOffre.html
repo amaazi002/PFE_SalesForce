@@ -1,0 +1,69 @@
+<template>
+    <lightning-button label="Ajouter une offre" variant="brand" onclick={openModal}></lightning-button>
+
+    <template if:true={isOpen}>
+        <section role="dialog" tabindex="-1" aria-modal="true" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <h2 class="slds-text-heading_medium">Nouvelle offre</h2>
+                    <button class="slds-button slds-button_icon slds-modal__close"
+                            title="Fermer"
+                            onclick={closeModal}>
+                        <lightning-icon icon-name="utility:close" alternative-text="Fermer" size="small"></lightning-icon>
+                    </button>
+                </header>
+
+                <div class="slds-modal__content slds-p-around_medium">
+                    <lightning-record-edit-form
+                        object-api-name="Offre__c"
+                        onsubmit={handleSubmit}
+                        onsuccess={handleSuccess}
+                        onerror={handleError}>
+                    
+                        <div class="slds-grid slds-wrap slds-gutters">
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                                <lightning-input-field field-name="Titre__c" required></lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                                <lightning-input-field field-name="Departement__c" required></lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                                <lightning-input-field field-name="Localisation__c" required></lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                                <lightning-input-field field-name="Statut__c" required></lightning-input-field>
+                            </div>
+
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                                <lightning-input
+                                    type="date"
+                                    label="Deadline"
+                                    name="Deadline__c"
+                                    value={deadline}
+                                    min={today}
+                                    required
+                                    onchange={handleDate}>
+                                </lightning-input>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1">
+                                <lightning-input-field field-name="CompetencesRequises__c" required></lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1">
+                                <lightning-input-field field-name="Description__c" required></lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1">
+                                <lightning-input-field field-name="Visible_aux_candidat__c" required></lightning-input-field>
+                            </div>
+                        </div>
+
+                        <div class="slds-m-top_medium slds-text-align_right">
+                            <lightning-button variant="neutral" label="Annuler" onclick={closeModal}></lightning-button>
+                            <lightning-button class="slds-m-left_small" type="submit" variant="brand" label="Enregistrer"></lightning-button>
+                        </div>
+                    </lightning-record-edit-form>
+                </div>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>

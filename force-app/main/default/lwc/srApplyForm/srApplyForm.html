@@ -1,0 +1,81 @@
+<template>
+  <section class="modal slds-modal slds-fade-in-open" role="dialog" aria-modal="true">
+    <div class="slds-modal__container">
+      <header class="slds-modal__header">
+        <h2 class="slds-text-heading_medium">Postuler</h2>
+        <button class="slds-button slds-button_icon slds-modal__close" title="Fermer" onclick={close}>
+          <lightning-icon icon-name="utility:close" alternative-text="Fermer" size="small"></lightning-icon>
+        </button>
+      </header>
+
+      <div class="slds-modal__content slds-p-around_medium">
+
+        <!-- Offre (lecture seule) -->
+        <div class="slds-grid slds-wrap slds-gutters slds-m-bottom_small">
+          <div class="slds-col slds-size_1-of-1">
+            <lightning-input type="text" label="Offre" value={offerName} disabled title={offerName}></lightning-input>
+          </div>
+        </div>
+
+        <template if:true={isSubmitting}>
+          <lightning-spinner alternative-text="Traitement..." size="small"></lightning-spinner>
+        </template>
+
+        <!-- Identité -->
+        <div class="slds-grid slds-wrap slds-gutters">
+          <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+            <lightning-input type="text" label="Prénom" value={firstName} onchange={onFirst} required></lightning-input>
+          </div>
+          <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+            <lightning-input type="text" label="Nom" value={lastName} onchange={onLast} required></lightning-input>
+          </div>
+          <div class="slds-col slds-size_1-of-1">
+            <lightning-input type="email" label="Email" value={email} onchange={onEmail} required></lightning-input>
+          </div>
+        </div>
+
+        <!-- Champs Candidature -->
+        <div class="slds-grid slds-wrap slds-gutters slds-m-top_medium">
+          <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+            <lightning-combobox label="Sexe" value={sexe} options={genderOptions} onchange={onSexe} required></lightning-combobox>
+          </div>
+        </div>
+
+        <div class="slds-grid slds-wrap slds-gutters slds-m-top_medium">
+          <div class="slds-col slds-size_1-of-1">
+            <lightning-textarea label="Compétences techniques" value={tech} onchange={onTech} required></lightning-textarea>
+          </div>
+          <div class="slds-col slds-size_1-of-1">
+            <lightning-textarea label="Expérience professionnelle" value={xp} onchange={onXp} required></lightning-textarea>
+          </div>
+          <div class="slds-col slds-size_1-of-1">
+            <lightning-textarea label="Compétences personnelles" value={soft} onchange={onSoft} required></lightning-textarea>
+          </div>
+        </div>
+
+        <!-- Upload CV (après création) -->
+        <div class="slds-m-top_medium">
+          <template if:true={candidatureId}>
+            <lightning-file-upload
+              label="Déposer votre CV (PDF/DOC/DOCX)"
+              record-id={candidatureId}
+              accept=".pdf,.doc,.docx"
+              onuploadfinished={onUploadFinished}>
+              required 
+            </lightning-file-upload>
+          </template>
+        </div>
+
+        <template if:true={lastError}>
+          <div class="slds-m-top_small slds-text-color_error">{lastError}</div>
+        </template>
+      </div>
+
+      <footer class="slds-modal__footer">
+        <lightning-button label="Annuler" onclick={close}></lightning-button>
+        <lightning-button class="slds-m-left_small" variant="brand" label={submitLabel} onclick={submit} disabled={isSubmitting}></lightning-button>
+      </footer>
+    </div>
+  </section>
+  <div class="slds-backdrop slds-backdrop_open"></div>
+</template>
