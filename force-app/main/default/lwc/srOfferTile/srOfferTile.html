@@ -1,9 +1,8 @@
-<!-- force-app/main/default/lwc/srOfferTile/srOfferTile.html -->
-<template>
-  <article class="offer-card" title={offer.Titre__c}>
-    <header class="offer-card__head">
-      <h2 class="offer-card__title">{offer.Titre__c}</h2>
-      <div class="offer-card__deadline">{deadlineText}</div>
+<template> 
+  <article class="offer-card" role="button" tabindex="0" onclick={onClick} onkeydown={onKeyDown} title={offer.Titre__c} > 
+    <header class="offer-card__head"> 
+      <h2 class="offer-card__title">{offer.Titre__c}</h2> 
+      <div class="offer-card__deadline">{deadlineText}</div> 
     </header>
 
     <section class="offer-card__section">
@@ -22,7 +21,7 @@
     </section>
 
     <footer class="offer-card__foot">
-      <lightning-button variant="neutral" label="Voir" onclick={view}></lightning-button>
+      <span class="offer-card__cta"></span>
     </footer>
-  </article>
+  </article> 
 </template>

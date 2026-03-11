@@ -1,11 +1,14 @@
+<!-- force-app/main/default/lwc/srOfferDetail/srOfferDetail.html -->
 <template>
   <div class="detail-wrapper">
     <article class="detail">
+      <!-- En‑tête -->
       <header class="detail__head">
         <h2 class="detail__title">{offer.Titre__c}</h2>
         <button class="btn-close" title="Fermer" onclick={close} aria-label="Fermer la fenêtre">×</button>
       </header>
 
+      <!-- Méta (pills) -->
       <div class="detail__meta">
         <template if:true={offer.Deadline__c}>
           <span class="pill">Date limite : {deadlineText}</span>
@@ -21,11 +24,13 @@
         </template>
       </div>
 
+      <!-- Description -->
       <section class="block">
         <div class="block__label">Description</div>
         <div class="block__text">{offer.Description__c}</div>
       </section>
 
+      <!-- Compétences (facultatif) -->
       <template if:true={offer.CompetencesRequises__c}>
         <section class="block">
           <div class="block__label">Compétences</div>
@@ -33,6 +38,7 @@
         </section>
       </template>
 
+      <!-- Actions -->
       <footer class="detail__foot">
         <lightning-button label="Fermer" onclick={close}></lightning-button>
         <lightning-button class="slds-m-left_small" variant="brand" label="Postuler" onclick={openApply}></lightning-button>
@@ -40,7 +46,7 @@
     </article>
   </div>
 
-  <!-- Modale Postuler hébergée ici -->
+  <!-- Sous‑overlay : Formulaire de candidature hébergé dans le détail -->
   <template if:true={showApply}>
     <div class="suboverlay" role="dialog" aria-modal="true" onclick={hideApply}>
       <div class="suboverlay__card" onclick={stop}>

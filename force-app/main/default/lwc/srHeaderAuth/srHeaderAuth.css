@@ -1,0 +1,13 @@
+.header { 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    padding: 8px 0; 
+} 
+.actions { 
+    display: flex; 
+    align-items: center; 
+}     
+.spacer { 
+    flex: 1; 
+}

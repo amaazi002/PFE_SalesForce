@@ -78,7 +78,11 @@ export default class SrApplyForm extends LightningElement {
     }
   }
 
-  onUploadFinished=()=> this.toast('Succès','CV chargé avec succès.','success');
+  onUploadFinished = (evt) => { const uploadedFiles = evt?.detail?.files || []; 
+                                const names = uploadedFiles.map(f => f.name).join(', '); 
+                                this.toast('Succès', uploadedFiles.length ? `CV chargé: ${names}` : 'Aucun fichier reçu', 'success'); 
+  };
+
 
   toast(title,message,variant){ this.dispatchEvent(new ShowToastEvent({ title, message, variant })); }
   err(e){ const b=e?.body||{}; if(b?.output?.errors?.length) return b.output.errors[0].message;

@@ -1,49 +1,63 @@
-/* force-app/main/default/lwc/srOfferTile/srOfferTile.css */
-.offer-card{
-  background:#F7F6F6;
-  border:1px solid #bfbfbf;
-  border-radius:12px;
-  padding:18px 20px;
-  box-shadow:0 2px 6px rgba(0,0,0,.06);
-  display:flex;
-  flex-direction:column
+.offer-card {
+background: #F7F6F6;
+border: 1px solid #bfbfbf;
+border-radius: 12px;
+padding: 18px 20px;
+box-shadow: 0 2px 6px rgba(0,0,0,.06);
+display: flex;
+flex-direction: column;
+height: 100%;
+min-height: 260px;
+cursor: pointer;
+transition: transform .08s ease-out, box-shadow .12s ease-out;
+}
+.offer-card:hover {
+transform: translateY(-2px);
+box-shadow: 0 6px 16px rgba(0,0,0,.10);
 }
 
-.offer-card__head{
-  display:flex;
-  justify-content:space-between;
-  align-items:baseline;
-  margin-bottom:10px
+.offer-card__head {
+display: flex;
+justify-content: space-between;
+align-items: baseline;
+margin-bottom: 10px;
 }
 
-.offer-card__title{
-  font-size:1.35rem;
-  font-weight:700;
-  line-height:1.6rem
+.offer-card__title {
+font-size: 1.2rem;
+font-weight: 700;
+line-height: 1.4rem;
+margin: 0;
+display: -webkit-box;
+/* -webkit-line-clamp: 2;          Limite le titre sur 2 lignes */
+-webkit-box-orient: vertical;
+overflow: hidden;
 }
 
-.offer-card__deadline{
-  color:#666;
-  font-size:.95rem
+.offer-card__deadline { color: #666; font-size: .95rem; }
+
+.offer-card__section { margin-top: 12px; }
+.offer-card__label   { font-weight: 700; margin-bottom: 4px; }
+
+/* Clamp du texte pour éviter les tuiles trop hautes */
+.offer-card__text {
+margin: 0;
+line-height: 1.45rem;
+color: #222;
+display: -webkit-box;
+/* -webkit-line-clamp: 3;          3 lignes visibles max */
+-webkit-box-orient: vertical;
+overflow: hidden;
 }
 
-.offer-card__section{
-  margin-top:12px
+/* Le footer reste en bas, ce qui uniformise encore la hauteur visuelle */
+.offer-card__foot {
+display: flex;
+justify-content: flex-end;
+margin-top: auto;
+}
+.offer-card__cta {
+font-weight: 600;
+color: #006dcc;
 }
 
-.offer-card__label{
-  font-weight:700;
-  margin-bottom:4px
-}
-
-.offer-card__text{
-  margin:0;
-  line-height:1.45rem;
-  color:#222
-}
-
-.offer-card__foot{
-  display:flex;
-  justify-content:flex-end;
-  margin-top:14px
-}

@@ -1,0 +1,9 @@
+.auth { 
+    display: flex; 
+    align-items: center; 
+    min-height: 36px; 
+}
+.hint { 
+    color: #888; 
+    font-size: 0.85rem; 
+}

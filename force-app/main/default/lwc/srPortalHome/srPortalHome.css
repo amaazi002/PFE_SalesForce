@@ -1,50 +1,45 @@
-.page { 
-  max-width: 1200px; 
-  margin: 0 auto; 
-  padding: 16px; 
+.page {
+max-width: 1200px;
+margin: 0 auto;
+padding: 16px;
 }
 
-.topbar { 
-  display: flex; 
-  align-items: center; 
-  justify-content: space-between; 
-  margin-bottom: 18px; 
+.topbar {
+display: flex;
+align-items: center;
+justify-content: space-between;
+margin-bottom: 18px;
 }
 
-.topbar .welcome {
-   font-weight: 600; 
-  }
+.topbar .welcome { font-weight: 600; }
 
-/* 2 colonnes fixes, 1 colonne en mobile */
-.grid { 
-  display: grid; 
-  grid-template-columns: repeat(2, minmax(420px, 1fr)); 
-  gap: 28px; 
+/* 2 colonnes fixes (desktop), 1 colonne en mobile, avec petit espace */
+.grid {
+display: grid;
+grid-template-columns: repeat(2, minmax(420px, 1fr));
+gap: 12px;                    /* petit espace entre les cartes */
+align-items: stretch;
+}
+.grid > c-sr-offer-tile {
+display: block;
+height: 100%;
 }
 
 @media (max-width: 920px) { .grid { grid-template-columns: 1fr; } }
 
-/* Overlay plein écran */
 .overlay {
-  position: fixed; 
-  inset: 0; 
-  background: rgba(0,0,0,.45);
-  display: flex; 
-  align-items: flex-start; 
-  justify-content: center;
-  padding: 28px; 
-  z-index: 5000;
+position: fixed;
+inset: 0;
+background: rgba(0,0,0,.45);
+display: flex;
+align-items: flex-start;
+justify-content: center;
+padding: 28px;
+z-index: 5000;
 }
-.overlay__card { 
-  width: min(960px, 96vw); 
-  animation: pop .12s ease-out; 
+.overlay__card {
+width: min(960px, 96vw);
+animation: pop .12s ease-out;
 }
+@keyframes pop { from { transform: scale(.98); opacity: .9 } to { transform: scale(1); opacity: 1 } }
 
-@keyframes pop {
-   from {
-     transform: scale(.98); 
-     opacity: .9 
-    } to { 
-      transform: scale(1); 
-      opacity: 1 
-    } }

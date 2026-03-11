@@ -1,0 +1,20 @@
+<template>
+<div class="wrap"> <article class="card"> <h2 class="title">Créer un compte</h2>
+    <div class="grid">
+    <lightning-input type="text" label="Prénom" value={firstName} onchange={onFirst} required></lightning-input>
+    <lightning-input type="text" label="Nom" value={lastName} onchange={onLast} required></lightning-input>
+    <lightning-input class="full" type="email" label="Email" value={email} onchange={onEmail} required></lightning-input>
+    <lightning-input type="password" label="Mot de passe" value={password} onchange={onPass} required></lightning-input>
+    <lightning-input type="password" label="Confirmer le mot de passe" value={confirm} onchange={onConfirm} required></lightning-input>
+  </div>
+
+  <template if:true={hasErrors}>
+    <div class="slds-m-top_small slds-text-color_error">{errorText}</div>
+  </template>
+
+  <div class="actions">
+    <lightning-button label="Se connecter" onclick={goLogin}></lightning-button>
+    <lightning-button class="slds-m-left_small" variant="brand" label="Créer mon compte" onclick={register} disabled={submitting}></lightning-button>
+  </div>
+</article>
+</div> </template>

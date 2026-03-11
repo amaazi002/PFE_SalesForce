@@ -15,9 +15,11 @@ public with sharing class SR_OfferController {
         Integer l = (limitSize != null && limitSize > 0 && limitSize <= 500) ? limitSize : 100;
         String soql =
             'SELECT Id, Titre__c, Description__c, CompetencesRequises__c,'+
-            '       Departement__c, Localisation__c, Deadline__c, Statut__c, Visible_aux_candidat__c '+
+            '       Departement__c, Localisation__c, Deadline__c, Statut__c, Visible_aux_candidat__c, TypeOffre__c '+
             'FROM Offre__c '+
-            'WHERE Statut__c != \'Clôturée\' AND ' + visibilityFilter() + ' '+
+            'WHERE ' + visibilityFilter() + ' '+
+            '  AND Statut__c NOT IN (\'Clôturée\', \'Brouillon\') '+
+            '  AND (TypeOffre__c = NULL OR TypeOffre__c NOT IN (\'Interne\', \'Internal\')) '+
             'ORDER BY CreatedDate DESC '+
             'LIMIT ' + String.valueOf(l);
         return Database.query(soql);
@@ -28,7 +30,7 @@ public with sharing class SR_OfferController {
         if (offreId == null) throw new AuraHandledException('offreId requis');
         return [
             SELECT Id, Titre__c, Description__c, CompetencesRequises__c,
-                   Departement__c, Localisation__c, Deadline__c, Statut__c, Visible_aux_candidat__c
+                Departement__c, Localisation__c, Deadline__c, Statut__c, Visible_aux_candidat__c, TypeOffre__c
             FROM Offre__c
             WHERE Id = :offreId LIMIT 1
         ];

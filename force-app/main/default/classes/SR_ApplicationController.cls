@@ -87,9 +87,9 @@ public static Id createCandidature(
         Schema.DescribeFieldResult dd = Candidature__c.DateDepot__c.getDescribe();
         if (dd.getType() == Schema.DisplayType.Date) {
             cand.put('DateDepot__c', Date.today());
-        } else if (dd.getType() == Schema.DisplayType.DateTime) {
-            cand.put('DateDepot__c', Datetime.now());
-        }
+         } else if (dd.getType() == Schema.DisplayType.Date) {
+             cand.put('DateDepot__c', Date.today());
+         }
     } catch (Exception e) { /* ignore */ }
 
     // Valider Statut__c: si 'Soumise' n'est pas autorisé, prendre la 1ère valeur

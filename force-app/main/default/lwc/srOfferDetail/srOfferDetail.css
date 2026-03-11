@@ -1,14 +1,29 @@
-.detail{background:#F7F6F6;border:1px solid #bfbfbf;border-radius:14px;box-shadow:0 14px 40px rgba(0,0,0,.20);padding:22px 24px}
-.detail__head{display:flex;align-items:center;justify-content:space-between}
-.detail__title{font-size:1.8rem;font-weight:800;line-height:2.2rem;margin-right:8px}
-.btn-close{background:transparent;border:none;font-size:1.8rem;line-height:1;cursor:pointer;color:#777}
-.btn-close:hover{color:#000}
-.detail__meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;margin-bottom:14px}
-.pill{background:#f3f4f6;border:1px solid #e3e5e8;color:#2d2f33;font-size:.95rem;padding:4px 8px;border-radius:9999px}
-.block{margin-top:14px}
-.block__label{font-weight:700;font-size:1.08rem;margin-bottom:6px}
-.block__text{white-space:pre-line;font-size:1.02rem;line-height:1.55rem}
-.detail__foot{margin-top:16px;display:flex;justify-content:flex-end}
+/* Grande carte */
+.detail {
+  background: #F7F6F6;
+  border: 1px solid #bfbfbf;
+  border-radius: 14px;
+  box-shadow: 0 14px 40px rgba(0,0,0,.20);
+  padding: 22px 24px;
+}
+.detail__head { display: flex; align-items: center; justify-content: space-between; }
+.detail__title { font-size: 1.8rem; font-weight: 800; line-height: 2.2rem; margin-right: 8px; }
+.btn-close { background: transparent; border: none; font-size: 1.8rem; line-height: 1; cursor: pointer; color: #777; }
+.btn-close:hover { color: #000; }
 
-.suboverlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-start;justify-content:center;padding:28px;z-index:6000}
-.suboverlay__card{width:min(960px,96vw)}
+.detail__meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; margin-bottom: 14px; }
+.pill { background: #f3f4f6; border: 1px solid #e3e5e8; color: #2d2f33; font-size: .95rem; padding: 4px 8px; border-radius: 9999px; }
+
+.block { margin-top: 14px; }
+.block__label { font-weight: 700; font-size: 1.08rem; margin-bottom: 6px; }
+.block__text  { white-space: pre-line; font-size: 1.02rem; line-height: 1.55rem; }
+
+.detail__foot { margin-top: 16px; display: flex; justify-content: flex-end; }
+
+/* ✅ Sous-overlay pour la modale Postuler */
+.suboverlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 28px; z-index: 6000; /* au-dessus de l'overlay parent */
+}
+.suboverlay__card { width: min(960px, 96vw); }

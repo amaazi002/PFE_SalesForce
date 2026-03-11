@@ -1,0 +1,8 @@
+<template> 
+    <div class="auth"> 
+        <template if:true={showButtons}> 
+            <lightning-button label="S'inscrire" variant="brand" onclick={goRegister}></lightning-button> 
+            <lightning-button class="slds-m-left_small" label="Se connecter" onclick={goLogin}></lightning-button> 
+        </template>
+    </div>
+</template>

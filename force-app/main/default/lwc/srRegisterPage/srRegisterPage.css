@@ -1,0 +1,30 @@
+.wrap { 
+    display:flex; 
+    justify-content:center; 
+    padding:24px; 
+}
+.card { 
+    max-width: 640px; 
+    width:100%; 
+    background:#fff; 
+    border-radius:12px; 
+    border:1px solid #e5e5e5;
+    padding:20px 22px; 
+}
+.title { 
+    margin:0 0 12px 0; 
+    font-size:1.2rem; 
+    font-weight:700; 
+}
+.grid { 
+    display:grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap:16px; }
+.grid .full { 
+    grid-column: 1 / -1; 
+}
+.actions { 
+    display:flex; 
+    justify-content:flex-end; 
+    margin-top:16px; 
+    }
