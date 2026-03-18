@@ -53,21 +53,23 @@ public static Offre__c clotureOffre(Id offreId) {
 }
 
 // Candidatures liées à une offre
-@AuraEnabled(cacheable=true)
-public static List<Candidature__c> getCandidatures(Id offreId) {
-    if (offreId == null) {
-        return new List<Candidature__c>();
+// NOTE: we also expose the public CV url so the LWC can render it.
+    @AuraEnabled(cacheable=true)
+    public static List<Candidature__c> getCandidatures(Id offreId) {
+        if (offreId == null) {
+            return new List<Candidature__c>();
+        }
+        return [
+            SELECT Id,
+                   CV_Public_URL__c,
+                   DateDepot__c,
+                   Statut__c,
+                   Score_Matching__c,
+                   Candidat__r.Name
+            FROM Candidature__c
+            WHERE Offre__c = :offreId
+            ORDER BY DateDepot__c DESC
+            LIMIT 500
+        ];
     }
-    return [
-        SELECT Id,
-               Name,
-               Statut__c,
-               DateDepot__c,
-               Candidat__r.Name
-        FROM Candidature__c
-        WHERE Offre__c = :offreId
-        ORDER BY DateDepot__c DESC
-        LIMIT 500
-    ];
-}
 }

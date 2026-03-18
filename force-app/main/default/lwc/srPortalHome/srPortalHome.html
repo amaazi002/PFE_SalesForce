@@ -1,28 +1,27 @@
+<!-- force-app/main/default/lwc/srPortalHome/srPortalHome.html -->
 <template>
   <div class="page">
+
     <div class="topbar">
+      <template if:true={isGuest}>
+        <div></div>
+        <!-- <div class="actions">
+          <lightning-button label="S'inscrire"   variant="brand"           onclick={openRegister}></lightning-button>
+          <lightning-button label="Se connecter" class="slds-m-left_small" onclick={goLogin}></lightning-button>
+        </div> -->
+      </template>
       <template if:false={isGuest}>
         <div class="welcome">Bienvenue, {userFullName}</div>
       </template>
     </div>
 
-    <template if:true={loadingOffers}>
-      <div class="loading">Chargement…</div>
-    </template>
-
-    <template if:false={loadingOffers}>
-      <template if:true={hasOffers}>
-        <div class="grid">
-          <template for:each={offers} for:item="o">
-            <c-sr-offer-tile key={o.Id} offer={o} onviewdetail={handleViewDetail}></c-sr-offer-tile>
-          </template>
-        </div>
+    <div class="grid">
+      <template for:each={offers} for:item="o">
+        <c-sr-offer-tile key={o.Id} offer={o} onviewdetail={handleViewDetail}></c-sr-offer-tile>
       </template>
-      <template if:false={hasOffers}>
-        <div class="empty">Aucune offre disponible pour le moment.</div>
-      </template>
-    </template>
+    </div>
 
+    <!-- Overlay : grande carte Détail -->
     <template if:true={selectedOfferId}>
       <div class="overlay" role="dialog" aria-modal="true" onclick={closeDetail}>
         <div class="overlay__card" onclick={stop}>
@@ -30,5 +29,6 @@
         </div>
       </div>
     </template>
-  </div> 
+
+  </div>
 </template>

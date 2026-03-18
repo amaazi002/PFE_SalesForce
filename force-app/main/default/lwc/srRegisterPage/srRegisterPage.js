@@ -1,48 +1,116 @@
-import { LightningElement, track } from 'lwc'; import selfRegister from '@salesforce/apex/SR_SelfRegistrationController.selfRegister'; import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import { LightningElement, track } from 'lwc';
+import sendOtp              from '@salesforce/apex/SR_SelfRegistrationController.sendOtp';
+import verifyOtpAndRegister from '@salesforce/apex/SR_SelfRegistrationController.verifyOtpAndRegister';
+import { ShowToastEvent }   from 'lightning/platformShowToastEvent';
+
 export default class SrRegisterPage extends LightningElement {
-@track firstName=''; @track lastName=''; @track email='';
-@track password=''; @track confirm='';
-@track hasErrors=false; @track errorText=''; submitting=false;
 
-onFirst = (e)=> this.firstName = e.target.value;
-onLast  = (e)=> this.lastName  = e.target.value;
-onEmail = (e)=> this.email     = e.target.value;
-onPass  = (e)=> this.password  = e.target.value;
-onConfirm=(e)=> this.confirm   = e.target.value;
+  @track firstName = '';
+  @track lastName  = '';
+  @track email     = '';
+  @track password  = '';
+  @track confirm   = '';
+  @track otpCode   = '';
 
-get basePath() {
-const p = window.location.pathname || '/'; const i = p.indexOf('/s/');
-return (i >= 0) ? p.substring(0, i + 3) : (p.endsWith('/') ? p : p + '/');
-}
-goLogin = () => window.location.assign(this.basePath + 'login');
+  @track step      = 1;
+  @track hasErrors = false;
+  @track errorText = '';
+  @track isLoading = false;
 
-validate() {
-const emailRe = /[\s@]+@[\s@]+.[\s@]+$/;
-if (!this.firstName || !this.lastName || !this.email || !this.password || !this.confirm) { return this.err('Tous les champs sont obligatoires'); }
-if (!emailRe.test(this.email)) { return this.err('Adresse email invalide'); }
-if (this.password !== this.confirm) { return this.err('Les mots de passe ne correspondent pas'); }
-if (this.password.length < 8) { return this.err('Mot de passe trop court (min 8 caractères)'); }
-this.hasErrors=false; this.errorText=''; return true;
-}
-err(msg){ this.hasErrors=true; this.errorText=msg; return false; }
-toast(title,message,variant){ this.dispatchEvent(new ShowToastEvent({ title, message, variant })); }
+  // ── Getters ───────────────────────────────────────────────────
+  get isStep1()       { return this.step === 1; }
+  get isStep2()       { return this.step === 2; }
+  get labelContinue() { return this.isLoading ? 'Envoi en cours...' : 'Continuer'; }
+  get labelRegister() { return this.isLoading ? 'Création...'       : 'Créer mon compte'; }
+  get loginUrl() {
+    const p = window.location.pathname || '/';
+    const i = p.indexOf('/s/');
+    const base = (i >= 0) ? p.substring(0, i + 3) : (p.endsWith('/') ? p : p + '/');
+    return base + 'login';
+  }
 
-async register() {
-if (!this.validate()) return;
-try {
-this.submitting = true;
-await selfRegister({ input: {
-firstName: this.firstName, lastName: this.lastName, email: this.email,
-password: this.password, confirmPassword: this.confirm
-// Optionnel: profileId:'00eXXXX', accountId:'001XXXX'
-}});
-this.toast('Succès','Compte créé. Connectez-vous pour postuler.','success');
-this.goLogin();
-} catch (e) {
-const msg = e?.body?.message || e?.message || 'Erreur à l’inscription';
-this.toast('Erreur', msg, 'error');
-} finally {
-this.submitting = false;
-}
-}
+  // ── Champs ────────────────────────────────────────────────────
+  onFirst   = (e) => { this.firstName = e.target.value; }
+  onLast    = (e) => { this.lastName  = e.target.value; }
+  onEmail   = (e) => { this.email     = e.target.value; }
+  onPass    = (e) => { this.password  = e.target.value; }
+  onConfirm = (e) => { this.confirm   = e.target.value; }
+  onOtp     = (e) => { this.otpCode   = e.target.value; }
+
+  // ── Navigation ────────────────────────────────────────────────
+  handleCancel = () => window.location.assign(this.loginUrl);
+  goBack       = () => { this.step = 1; this.clearError(); }
+
+  // ── Validation ────────────────────────────────────────────────
+  validateForm() {
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!this.firstName.trim() || !this.lastName.trim() ||
+        !this.email.trim() || !this.password || !this.confirm) {
+      this.setError('Tous les champs sont obligatoires.'); return false;
+    }
+    if (!emailRe.test(this.email.trim())) {
+      this.setError('Adresse email invalide.'); return false;
+    }
+    if (this.password !== this.confirm) {
+      this.setError('Les mots de passe ne correspondent pas.'); return false;
+    }
+    if (this.password.length < 8) {
+      this.setError('Mot de passe trop court (min 8 caractères).'); return false;
+    }
+    this.clearError();
+    return true;
+  }
+
+  // ── Étape 1 → envoyer OTP ─────────────────────────────────────
+  async handleContinue() {
+    if (!this.validateForm()) return;
+    this.isLoading = true;
+    try {
+      await sendOtp({
+        firstName       : this.firstName.trim(),
+        lastName        : this.lastName.trim(),
+        email           : this.email.trim(),
+        password        : this.password,
+        confirmPassword : this.confirm
+      });
+      this.step = 2;
+      this.clearError();
+    } catch (e) {
+      this.setError(this.extractMsg(e));
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  // ── Étape 2 → vérifier OTP ────────────────────────────────────
+  async handleRegister() {
+    if (!this.otpCode || this.otpCode.trim().length !== 6) {
+      this.setError('Veuillez saisir le code à 6 chiffres reçu par email.');
+      return;
+    }
+    this.isLoading = true;
+    try {
+      await verifyOtpAndRegister({
+        firstName : this.firstName.trim(),
+        lastName  : this.lastName.trim(),
+        email     : this.email.trim(),
+        password  : this.password,
+        otpCode   : this.otpCode.trim()
+      });
+      this.toast('Succès', 'Compte créé ! Connectez-vous pour postuler.', 'success');
+      window.location.assign(this.loginUrl);
+    } catch (e) {
+      this.setError(this.extractMsg(e));
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────
+  setError(msg) { this.hasErrors = true;  this.errorText = msg; }
+  clearError()  { this.hasErrors = false; this.errorText = '';  }
+  extractMsg(e) { return e?.body?.message || e?.message || 'Une erreur est survenue.'; }
+  toast(title, message, variant) {
+    this.dispatchEvent(new ShowToastEvent({ title, message, variant }));
+  }
 }

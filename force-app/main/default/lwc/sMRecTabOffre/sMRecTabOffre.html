@@ -90,10 +90,15 @@
                                         <tr key={cand.Id}>
                                             <td><div class="slds-truncate" title={cand.candidateName}>{cand.candidateName}</div></td>
                                             <td><div class="slds-truncate" title={cand.Statut__c}>{cand.Statut__c}</div></td>
-                                            <td><div class="slds-truncate">{cand.createdDateFmt}</div></td>
-                                            <td><div class="slds-truncate">{cand.Score__c}</div></td>
-                                            <td><div class="slds-truncate">{cand.CV_Public_URL__c}</div></td>
-
+                                            <td><div class="slds-truncate" title={cand.DateDepot__c}>{cand.DateDepot__c}</div></td>
+                                            <td><div class="slds-truncate" title={cand.Score__c}>{cand.Score__c}</div></td>
+                                            <td>
+                                                <lightning-formatted-url
+                                                    value={cand.cvUrl}
+                                                    label={cand.cvLabel}
+                                                    target="_blank">
+                                                </lightning-formatted-url>
+                                            </td>
                                         </tr>
                                     </template>
                                 </tbody>

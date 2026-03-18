@@ -3,6 +3,8 @@ import getProfile from '@salesforce/apex/SR_OfferController.getCurrentUserProfil
 import getOffer from '@salesforce/apex/SR_OfferController.getOfferById';
 import createCandidature from '@salesforce/apex/SR_ApplicationController.createCandidature';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import setCvLink from '@salesforce/apex/SR_FileUploadController.setCvLink';
+
 
 export default class SrApplyForm extends LightningElement {
   @api offerId;    // Id de l'offre (obligatoire)
@@ -29,7 +31,10 @@ export default class SrApplyForm extends LightningElement {
 
   onFirst=(e)=>this.firstName=e.target.value; onLast=(e)=>this.lastName=e.target.value; onEmail=(e)=>this.email=e.target.value;
   onSexe=(e)=>this.sexe=e.detail.value; onTech=(e)=>this.tech=e.target.value; onXp=(e)=>this.xp=e.target.value; onSoft=(e)=>this.soft=e.target.value;
-
+  RGPDConsent = false;
+  onRGPDConsent(event) {
+    this.RGPDConsent = event.target.checked;
+}
   close=()=> this.dispatchEvent(new CustomEvent('close'));
 
   submit=async()=>{
@@ -52,6 +57,7 @@ export default class SrApplyForm extends LightningElement {
         const candId = await createCandidature({
           offreId:   this.offerId,
           sexe:      this.sexe,
+          RGPDConsent: this.RGPDConsent,
           techSkills:this.tech,
           experience:this.xp,
           softSkills:this.soft,
@@ -78,10 +84,23 @@ export default class SrApplyForm extends LightningElement {
     }
   }
 
-  onUploadFinished = (evt) => { const uploadedFiles = evt?.detail?.files || []; 
-                                const names = uploadedFiles.map(f => f.name).join(', '); 
-                                this.toast('Succès', uploadedFiles.length ? `CV chargé: ${names}` : 'Aucun fichier reçu', 'success'); 
+  onUploadFinished = async (evt) => {
+  try {
+  const files = evt?.detail?.files || [];
+  if (!files.length) return;
+  if (!this.candidatureId) {
+  this.toast('Erreur', "Créez d'abord la candidature avant de téléverser le CV.", 'error');
+  return;
+  }
+  const docId = files[0].documentId; // ContentDocumentId
+  const makePublic = true; // ou false pour un lien interne
+  await setCvLink({ candidatureId: this.candidatureId, contentDocumentId: docId, makePublic });
+  this.toast('Succès', 'CV chargé et lien ajouté à la candidature.', 'success');
+  } catch (e) {
+  this.toast('Erreur', this.err(e), 'error');
+  }
   };
+
 
 
   toast(title,message,variant){ this.dispatchEvent(new ShowToastEvent({ title, message, variant })); }

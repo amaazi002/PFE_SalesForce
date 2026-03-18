@@ -87,4 +87,6 @@
   font-weight     : 600;
 }
 
-.login-link a:hover { text-decoration: underline; }
+.login-link a:hover {
+  text-decoration: underline;
+}

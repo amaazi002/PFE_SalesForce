@@ -1,20 +1,88 @@
 <template>
-<div class="wrap"> <article class="card"> <h2 class="title">Créer un compte</h2>
-    <div class="grid">
-    <lightning-input type="text" label="Prénom" value={firstName} onchange={onFirst} required></lightning-input>
-    <lightning-input type="text" label="Nom" value={lastName} onchange={onLast} required></lightning-input>
-    <lightning-input class="full" type="email" label="Email" value={email} onchange={onEmail} required></lightning-input>
-    <lightning-input type="password" label="Mot de passe" value={password} onchange={onPass} required></lightning-input>
-    <lightning-input type="password" label="Confirmer le mot de passe" value={confirm} onchange={onConfirm} required></lightning-input>
-  </div>
+  <div class="register-page">
 
-  <template if:true={hasErrors}>
-    <div class="slds-m-top_small slds-text-color_error">{errorText}</div>
-  </template>
+    <!-- ── Étape 1 : Formulaire ── -->
+    <template if:true={isStep1}>
+      <div class="register-card">
 
-  <div class="actions">
-    <lightning-button label="Se connecter" onclick={goLogin}></lightning-button>
-    <lightning-button class="slds-m-left_small" variant="brand" label="Créer mon compte" onclick={register} disabled={submitting}></lightning-button>
+        <div class="register-header">
+          <h1 class="register-title">Créer un compte</h1>
+          <p class="register-sub">Rejoignez notre portail de recrutement</p>
+        </div>
+
+        <div class="slds-grid slds-wrap slds-gutters">
+          <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+            <lightning-input type="text"     label="Prénom *"                    value={firstName} onchange={onFirst}   required></lightning-input>
+          </div>
+          <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+            <lightning-input type="text"     label="Nom *"                       value={lastName}  onchange={onLast}    required></lightning-input>
+          </div>
+          <div class="slds-col slds-size_1-of-1">
+            <lightning-input type="email"    label="Email *"                     value={email}     onchange={onEmail}   required></lightning-input>
+          </div>
+          <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+            <lightning-input type="password" label="Mot de passe *"              value={password}  onchange={onPass}    required></lightning-input>
+          </div>
+          <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+            <lightning-input type="password" label="Confirmer le mot de passe *" value={confirm}   onchange={onConfirm} required></lightning-input>
+          </div>
+        </div>
+
+        <template if:true={hasErrors}>
+          <div class="error-msg">{errorText}</div>
+        </template>
+
+        <div class="register-actions">
+          <lightning-button label="Annuler"        onclick={handleCancel}></lightning-button>
+          <lightning-button variant="brand" label={labelContinue} onclick={handleContinue} disabled={isLoading}></lightning-button>
+        </div>
+
+        <div class="login-link">
+          Déjà un compte ? <a href={loginUrl}>Se connecter</a>
+        </div>
+
+      </div>
+    </template>
+
+    <!-- ── Étape 2 : Code OTP ── -->
+    <template if:true={isStep2}>
+      <div class="register-card">
+
+        <div class="register-header">
+          <div class="otp-icon">✉️</div>
+          <h1 class="register-title">Vérifiez votre email</h1>
+          <p class="otp-hint">
+            Un code à 6 chiffres a été envoyé à<br/>
+            <strong>{email}</strong><br/>
+            Il est valable <strong>10 minutes</strong>.
+          </p>
+        </div>
+
+        <lightning-input
+          type="text"
+          label="Code de vérification"
+          value={otpCode}
+          onchange={onOtp}
+          maxlength="6"
+          placeholder="Ex : 482931">
+        </lightning-input>
+
+        <template if:true={hasErrors}>
+          <div class="error-msg">{errorText}</div>
+        </template>
+
+        <div class="resend-row">
+          <span>Vous n'avez pas reçu le code ?</span>
+          <lightning-button variant="base" label="Renvoyer" onclick={handleContinue} disabled={isLoading}></lightning-button>
+        </div>
+
+        <div class="register-actions">
+          <lightning-button label="Retour"       onclick={goBack}></lightning-button>
+          <lightning-button variant="brand" label={labelRegister} onclick={handleRegister} disabled={isLoading}></lightning-button>
+        </div>
+
+      </div>
+    </template>
+
   </div>
-</article>
-</div> </template>
+</template>
