@@ -16,13 +16,10 @@ public without sharing class SR_SelfRegistrationController {
 
         if (String.isBlank(firstName) || String.isBlank(lastName) || String.isBlank(email))
             throw new AuraHandledException('Nom, prenom et email sont obligatoires.');
-
         if (String.isBlank(password) || String.isBlank(confirmPassword))
             throw new AuraHandledException('Le mot de passe est obligatoire.');
-
         if (password != confirmPassword)
             throw new AuraHandledException('Les mots de passe ne correspondent pas.');
-
         if (password.length() < 8)
             throw new AuraHandledException('Mot de passe trop court (min 8 caracteres).');
 
@@ -42,18 +39,11 @@ public without sharing class SR_SelfRegistrationController {
         otp.Email__c  = cleanEmail;
         otp.Code__c   = code;
         insert otp;
-        System.debug('OTPs : ' + [SELECT Id, Email__c, Code__c, CreatedDate FROM SR_OTP__c WHERE Id = :otp.Id]);
-
-        try {
-            sendOtpEmail(cleanEmail, firstName, code);
-            System.debug('OTP email sent successfully to: ' + cleanEmail);
-        } catch (Exception ex) {
-            System.debug('sendOtpEmail error: ' + ex.getMessage());
-            throw new AuraHandledException('Erreur lors de l envoi de l email : ' + ex.getMessage());
-        }
+        System.debug('OTP inserted: ' + otp.Id + ' for ' + cleanEmail);
+        // Email envoye automatiquement par SR_OTP_Trigger (after insert)
     }
 
-    // === ETAPE 2 : Verifier l'OTP et creer le compte ===
+    // === ETAPE 2 : Verifier OTP et creer compte ===
     @AuraEnabled
     public static String verifyOtpAndRegister(
             String firstName,
@@ -65,7 +55,6 @@ public without sharing class SR_SelfRegistrationController {
 
         if (String.isBlank(email) || String.isBlank(otpCode))
             throw new AuraHandledException('Email et code OTP sont obligatoires.');
-
         if (String.isBlank(password) || password != confirmPassword)
             throw new AuraHandledException('Mot de passe invalide ou non confirme.');
 
@@ -81,12 +70,10 @@ public without sharing class SR_SelfRegistrationController {
             LIMIT  1
         ];
         System.debug('OTP records found: ' + otps.size());
-
         if (otps.isEmpty())
             throw new AuraHandledException('Aucun code OTP trouve. Veuillez recommencer.');
 
         SR_OTP__c otp = otps[0];
-        System.debug('OTP record: ' + otp);
 
         Datetime expiresAt = otp.CreatedDate.addMinutes(OTP_EXPIRY_MINUTES);
         System.debug('expiresAt: ' + expiresAt + ' | now: ' + Datetime.now());
@@ -99,11 +86,10 @@ public without sharing class SR_SelfRegistrationController {
 
         delete otp;
         System.debug('OTP deleted. Creating portal user...');
-
         return createPortalUser(firstName, lastName, cleanEmail, password);
     }
 
-    // === Compatibilite ascendante (srRegisterForm) ===
+    // === Compatibilite ascendante ===
     public class SelfRegInput {
         @AuraEnabled public String firstName;
         @AuraEnabled public String lastName;
@@ -116,10 +102,7 @@ public without sharing class SR_SelfRegistrationController {
     public static String selfRegister(SelfRegInput input) {
         if (input == null)
             throw new AuraHandledException('Donnees manquantes.');
-        return createPortalUser(
-            input.firstName, input.lastName,
-            input.email,     input.password
-        );
+        return createPortalUser(input.firstName, input.lastName, input.email, input.password);
     }
 
     // === Methodes privees ===
@@ -189,41 +172,5 @@ public without sharing class SR_SelfRegistrationController {
         String code = String.valueOf(raw);
         while (code.length() < OTP_LENGTH) { code = '0' + code; }
         return code;
-    }
-
-    private static void sendOtpEmail(
-            String toEmail, String firstName, String code) {
-
-        String subject = 'Votre code de verification - Portail Recrutement';
-
-        String styleDiv  = 'font-family:Arial,sans-serif;max-width:480px;'
-                         + 'margin:auto;border:1px solid #dddbda;'
-                         + 'border-radius:8px;padding:32px;';
-        String styleH2   = 'color:#0176d3;';
-        String styleCode = 'font-size:2rem;font-weight:700;'
-                         + 'letter-spacing:10px;text-align:center;'
-                         + 'padding:16px 0;color:#0176d3;';
-        String styleNote = 'color:#706e6b;font-size:.85rem;';
-
-        String htmlBody
-            = '<div style="' + styleDiv + '">'
-            + '<h2 style="' + styleH2 + '">Portail de Recrutement</h2>'
-            + '<p>Bonjour <strong>' + firstName + '</strong>,</p>'
-            + '<p>Voici votre code de verification'
-            + ' pour finaliser la creation de votre compte :</p>'
-            + '<div style="' + styleCode + '">' + code + '</div>'
-            + '<p>Ce code est valable <strong>'
-            + OTP_EXPIRY_MINUTES + ' minutes</strong>.</p>'
-            + '<p style="' + styleNote + '">'
-            + 'Si vous n\'avez pas demande ce code,'
-            + ' ignorez cet e-mail.</p>'
-            + '</div>';
-
-        Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
-        mail.setToAddresses(new List<String>{ toEmail });
-        mail.setSubject(subject);
-        mail.setHtmlBody(htmlBody);
-        mail.setSaveAsActivity(false);
-        Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{ mail });
     }
 }

@@ -1,1 +1,20 @@
-<?xml version="1.0" encoding="UTF-8"?> <LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata" fqn="srAuthButtons"> <apiVersion>58.0</apiVersion> <isExposed>true</isExposed> <masterLabel>SR Auth Buttons</masterLabel> <targets> <target>lightningCommunity__Page</target> <target>lightningCommunity__Default</target> <target>lightning__AppPage</target> <target>lightning__HomePage</target> <target>lightning__RecordPage</target> </targets> <targetConfigs> <targetConfig targets="lightningCommunity__Default,lightning__AppPage,lightning__HomePage,lightning__RecordPage"> <property name="showWhenAuthenticated" type="Boolean" label="Afficher même si connecté (aperçu)" default="false"/> <property name="loginPath" type="String" label="Chemin page Connexion" default="login"/> <property name="registerPath" type="String" label="Chemin page Inscription" default="register"/> </targetConfig> <!-- Pas de <property> pour lightningCommunity__Page --> </targetConfigs> </LightningComponentBundle>
+<?xml version="1.0" encoding="UTF-8"?> 
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata" fqn="srAuthButtons"> 
+    <apiVersion>58.0</apiVersion> 
+    <isExposed>true</isExposed> 
+    <masterLabel>SR Auth Buttons</masterLabel> 
+    <targets> 
+        <target>lightningCommunity__Page</target> 
+        <target>lightningCommunity__Default</target> 
+        <target>lightning__AppPage</target> 
+        <target>lightning__HomePage</target> 
+        <target>lightning__RecordPage</target> 
+    </targets> 
+    <targetConfigs> 
+        <targetConfig targets="lightningCommunity__Default,lightning__AppPage,lightning__HomePage,lightning__RecordPage"> 
+            <property name="showWhenAuthenticated" type="Boolean" label="Afficher même si connecté (aperçu)" default="false"/> 
+            <property name="loginPath" type="String" label="Chemin page Connexion" default="login"/> 
+            <property name="registerPath" type="String" label="Chemin page Inscription" default="register"/> 
+        </targetConfig> <!-- Pas de <property> pour lightningCommunity__Page --> 
+    </targetConfigs> 
+</LightningComponentBundle>

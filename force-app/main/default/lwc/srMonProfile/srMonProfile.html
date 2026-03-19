@@ -1,0 +1,82 @@
+<!-- force-app/main/default/lwc/srMonProfile/srMonProfile.html -->
+<template>
+  <div class="profile-page">
+
+    <!-- ── SECTION : Informations personnelles ── -->
+    <div class="card">
+      <h2 class="card__title">
+        <lightning-icon icon-name="utility:user" size="small" class="slds-m-right_x-small"></lightning-icon>
+        Mes informations personnelles
+      </h2>
+
+      <template if:true={loading}>
+        <lightning-spinner alternative-text="Chargement..." size="medium"></lightning-spinner>
+      </template>
+
+      <template if:false={loading}>
+        <div class="form-grid">
+          <lightning-input label="Prénom"    value={firstName} onchange={onChange} data-field="firstName" class="form-field"></lightning-input>
+          <lightning-input label="Nom"       value={lastName}  onchange={onChange} data-field="lastName"  class="form-field"></lightning-input>
+          <lightning-input label="Email"     value={email}     onchange={onChange} data-field="email"     type="email" class="form-field"></lightning-input>
+          <lightning-input label="Téléphone" value={phone}     onchange={onChange} data-field="phone"     type="tel"   class="form-field"></lightning-input>
+        </div>
+
+        <template if:true={saveSuccess}>
+          <div class="alert alert--success">✅ Informations mises à jour avec succès !</div>
+        </template>
+        <template if:true={saveError}>
+          <div class="alert alert--error">❌ {saveError}</div>
+        </template>
+
+        <div class="card__footer">
+          <lightning-button variant="brand" label="Enregistrer" onclick={handleSave} disabled={saving}></lightning-button>
+        </div>
+      </template>
+    </div>
+
+    <!-- ── SECTION : Mes candidatures ── -->
+    <div class="card">
+      <h2 class="card__title">
+        <lightning-icon icon-name="utility:list" size="small" class="slds-m-right_x-small"></lightning-icon>
+        Mes candidatures
+      </h2>
+
+      <template if:true={loadingCandidatures}>
+        <lightning-spinner alternative-text="Chargement..." size="medium"></lightning-spinner>
+      </template>
+
+      <template if:false={loadingCandidatures}>
+        <template if:true={hasCandidatures}>
+          <div class="table-wrapper">
+            <table class="cand-table">
+              <thead>
+                <tr>
+                  <th>Poste</th>
+                  <th>Département</th>
+                  <th>Localisation</th>
+                  <th>Statut</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template for:each={candidatures} for:item="c">
+                  <tr key={c.Id}>
+                    <td>{c.Offre__r.Titre__c}</td>
+                    <td>{c.Offre__r.Departement__c}</td>
+                    <td>{c.Offre__r.Localisation__c}</td>
+                    <td><span class={c.statutClass}>{c.Statut__c}</span></td>
+                    <td>{c.formattedDate}</td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </template>
+        <template if:false={hasCandidatures}>
+          <p class="empty-msg">Vous n'avez pas encore postulé à une offre.</p>
+        </template>
+      </template>
+    </div>
+
+  </div>
+</template>

@@ -2,18 +2,7 @@
 <template>
   <div class="page">
 
-    <div class="topbar">
-      <template if:true={isGuest}>
-        <div></div>
-        <!-- <div class="actions">
-          <lightning-button label="S'inscrire"   variant="brand"           onclick={openRegister}></lightning-button>
-          <lightning-button label="Se connecter" class="slds-m-left_small" onclick={goLogin}></lightning-button>
-        </div> -->
-      </template>
-      <template if:false={isGuest}>
-        <div class="welcome">Bienvenue, {userFullName}</div>
-      </template>
-    </div>
+    <c-sr-header-auth></c-sr-header-auth>
 
     <div class="grid">
       <template for:each={offers} for:item="o">

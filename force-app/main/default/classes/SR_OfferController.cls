@@ -1,26 +1,25 @@
-// force-app/main/default/classes/SR_OfferController.cls
-public with sharing class SR_OfferController {
+public without sharing class SR_OfferController {
 
-    // Filtre visibilité compatible checkbox (true) OU picklist ('Oui', 'Yes', 'Visible', 'Disponible')
-    private static String visibilityFilter() {
-        Schema.DescribeFieldResult d = Offre__c.Visible_aux_candidat__c.getDescribe();
-        if (d.getType() == Schema.DisplayType.Boolean) {
-            return 'Visible_aux_candidat__c = true';
-        }
-        return '(Visible_aux_candidat__c IN (\'Oui\', \'Yes\', \'Visible\', \'Disponible\'))';
-    }
+    // ─── Offres publiques (Guest + Connecté) ──────────────────────────────────
 
     @AuraEnabled(cacheable=true)
     public static List<Offre__c> getPublicOffers(Integer limitSize) {
         Integer l = (limitSize != null && limitSize > 0 && limitSize <= 500) ? limitSize : 100;
+        String visFilter;
+        Schema.DescribeFieldResult d = Offre__c.Visible_aux_candidat__c.getDescribe();
+        if (d.getType() == Schema.DisplayType.Boolean) {
+            visFilter = 'Visible_aux_candidat__c = true';
+        } else {
+            visFilter = '(Visible_aux_candidat__c IN (\'Oui\', \'Yes\', \'Visible\', \'Disponible\'))';
+        }
         String soql =
-            'SELECT Id, Titre__c, Description__c, CompetencesRequises__c,'+
-            '       Departement__c, Localisation__c, Deadline__c, Statut__c, Visible_aux_candidat__c, TypeOffre__c '+
-            'FROM Offre__c '+
-            'WHERE ' + visibilityFilter() + ' '+
-            '  AND Statut__c NOT IN (\'Clôturée\', \'Brouillon\') '+
-            '  AND (TypeOffre__c = NULL OR TypeOffre__c NOT IN (\'Interne\', \'Internal\')) '+
-            'ORDER BY CreatedDate DESC '+
+            'SELECT Id, Titre__c, Description__c, CompetencesRequises__c,' +
+            '       Departement__c, Localisation__c, Deadline__c, Statut__c, Visible_aux_candidat__c, TypeOffre__c ' +
+            'FROM Offre__c ' +
+            'WHERE ' + visFilter + ' ' +
+            '  AND Statut__c NOT IN (\'Clôturée\', \'Brouillon\') ' +
+            '  AND (TypeOffre__c = NULL OR TypeOffre__c NOT IN (\'Interne\', \'Internal\')) ' +
+            'ORDER BY CreatedDate DESC ' +
             'LIMIT ' + String.valueOf(l);
         return Database.query(soql);
     }
@@ -30,11 +29,13 @@ public with sharing class SR_OfferController {
         if (offreId == null) throw new AuraHandledException('offreId requis');
         return [
             SELECT Id, Titre__c, Description__c, CompetencesRequises__c,
-                Departement__c, Localisation__c, Deadline__c, Statut__c, Visible_aux_candidat__c, TypeOffre__c
+                   Departement__c, Localisation__c, Deadline__c, Statut__c, Visible_aux_candidat__c, TypeOffre__c
             FROM Offre__c
             WHERE Id = :offreId LIMIT 1
         ];
     }
+
+    // ─── Profil utilisateur courant ───────────────────────────────────────────
 
     @AuraEnabled(cacheable=true)
     public static Map<String, String> getCurrentUserProfile() {

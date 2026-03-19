@@ -23,7 +23,11 @@ export default class SrApplyForm extends LightningElement {
 
   async connectedCallback(){
     try { const p = await getProfile();
-      if (p && p.isGuest === 'false') { this.firstName=p.firstName||''; this.lastName=p.lastName||''; this.email=p.email||''; }
+      if (p && p.isGuest === 'false') { 
+        this.firstName=p.firstName||''; 
+        this.lastName=p.lastName||''; 
+        this.email=p.email||''; 
+      }
     } catch(e) {}
     // Fallback : si le nom n'est pas passé, on le charge via l'Id
     try { if (!this.offerName && this.offerId) { const o = await getOffer({ offreId:this.offerId }); this.offerName = o?.Titre__c || ''; } } catch(e) {}
