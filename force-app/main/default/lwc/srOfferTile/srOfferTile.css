@@ -1,124 +1,72 @@
+/* force-app/main/default/lwc/srOfferTile/srOfferTile.css */
+
+/* ✅ cursor:pointer sur toute la carte */
 .offer-card {
-background: #F7F6F6;
-border: 1px solid #bfbfbf;
-border-radius: 12px;
-padding: 18px 20px;
-box-shadow: 0 2px 6px rgba(0,0,0,.06);
-display: flex;
-flex-direction: column;
-height: 100%;
-min-height: 260px;
-cursor: pointer;
-transition: transform .08s ease-out, box-shadow .12s ease-out;
+    background: #F7F6F6;
+    border: 1px solid #bfbfbf;
+    border-radius: 12px;
+    padding: 18px 20px;
+    box-shadow: 0 2px 6px rgba(0,0,0,.06);
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    transition: box-shadow .2s ease, transform .15s ease;
 }
+
+/* ✅ Effet hover sur la carte */
 .offer-card:hover {
-transform: translateY(-2px);
-box-shadow: 0 6px 16px rgba(0,0,0,.10);
+    box-shadow: 0 6px 18px rgba(0,0,0,.13);
+    transform: translateY(-2px);
 }
 
 .offer-card__head {
-display: flex;
-justify-content: space-between;
-align-items: baseline;
-margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 10px;
+    gap: 8px;
 }
 
 .offer-card__title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  line-height: 1.4rem;
-  margin: 0;
-  display: -webkit-box;
-  /* -webkit-line-clamp: 2;          Limite le titre sur 2 lignes */
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  color: var(--pwc-black);
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1.6rem;
 }
 
+/* Date limite normale */
 .offer-card__deadline {
-  color: var(--pwc-medium-gray);
-  font-size: 0.95rem;
+    color: #666;
+    font-size: .85rem;
+    white-space: nowrap;
+}
+
+/* Date limite dépassée → rouge */
+.offer-card__deadline--expired {
+    color: #c23934;
+    font-weight: 600;
 }
 
 .offer-card__section {
-  margin-top: 12px;
+    margin-top: 12px;
 }
 
 .offer-card__label {
-  font-weight: 700;
-  margin-bottom: 4px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
 }
 
-/* Clamp du texte pour éviter les tuiles trop hautes */
 .offer-card__text {
-  margin: 0;
-  line-height: 1.45rem;
-  color: var(--pwc-dark-gray);
-  display: -webkit-box;
-  /* -webkit-line-clamp: 3;          3 lignes visibles max */
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+    margin: 0;
+    line-height: 1.45rem;
+    color: #222;
 }
 
-/* Le footer reste en bas, ce qui uniformise encore la hauteur visuelle */
-.offer-card__foot {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: auto;
+/* ✅ Description limitée à 3 lignes avec "..." */
+.offer-card__text--clamp {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
-.offer-card__cta {
-  font-weight: 600;
-  color: var(--pwc-orange);
-  transition: color 0.15s ease;
-}
-
-.offer-card__cta:hover {
-  color: var(--pwc-orange-90);
-}
-
-.card {
-  background: var(--pwc-white);
-  border-radius: 12px;
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.08);
-  padding: 24px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 16px;
-}
-
-.card-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--pwc-black);
-}
-
-.card-subtitle {
-  font-size: 0.9rem;
-  color: var(--pwc-medium-gray);
-}
-
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.65rem 1.2rem;
-  border-radius: 999px;
-  border: none;
-  background: linear-gradient(135deg, var(--pwc-orange), var(--pwc-orange-90));
-  color: var(--pwc-white);
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 20px rgba(255, 92, 0, 0.35);
-}
-

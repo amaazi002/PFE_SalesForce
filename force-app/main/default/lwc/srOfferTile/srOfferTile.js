@@ -1,35 +1,57 @@
+// force-app/main/default/lwc/srOfferTile/srOfferTile.js
 import { LightningElement, api } from 'lwc';
+
 export default class SrOfferTile extends LightningElement {
-  @api offer;
 
-  get deadlineText() {
-    if (this.offer && this.offer.Deadline__c) {
-      try { return new Date(this.offer.Deadline__c).toLocaleDateString(); }
-      catch (e) { return ''; }
-    }
-    return '';
-  }
-  get descriptionText() {
-    return (this.offer && this.offer.Description__c) ? this.offer.Description__c : '';
-  }
-  get departementText() {
-    return (this.offer && this.offer.Departement__c) ? this.offer.Departement__c : '';
-  }
-  get localisationText() {
-    return (this.offer && this.offer.Localisation__c) ? this.offer.Localisation__c : '';
-  }
+    @api offer;
 
-  onClick() {
-    if (this.offer && this.offer.Id) {
-      this.dispatchEvent(new CustomEvent('viewdetail', { detail: { offerId: this.offer.Id } }));
+    // ── Titre ─────────────────────────────────────────────────────
+    get titreText() {
+        return this.offer?.Titre__c || '—';
     }
-  }
 
-  onKeyDown(evt) {
-    var k = evt.key || evt.code;
-    if (k === 'Enter' || k === ' ' || k === 'Spacebar' || k === 'Space') {
-      evt.preventDefault();
-      this.onClick();
+    // ── Description : 3 lignes max (200 caractères) ───────────────
+    get descriptionText() {
+        const desc = this.offer?.Description__c || '—';
+        return desc.length > 200 ? desc.substring(0, 200) + '...' : desc;
     }
-  }
+
+    // ── Département ───────────────────────────────────────────────
+    get departementText() {
+        return this.offer?.Departement__c || '—';
+    }
+
+    // ── Localisation ──────────────────────────────────────────────
+    get localisationText() {
+        return this.offer?.Localisation__c || '—';
+    }
+
+    // ── Date limite formatée en français ──────────────────────────
+    get deadlineText() {
+        if (!this.offer?.Deadline__c) return 'Pas de date limite';
+        const d = new Date(this.offer.Deadline__c);
+        return 'Date limite : ' + d.toLocaleDateString('fr-FR', {
+            day  : '2-digit',
+            month: 'long',
+            year : 'numeric'
+        });
+    }
+
+    // ── Classe deadline rouge si dépassée ─────────────────────────
+    get deadlineClass() {
+        if (!this.offer?.Deadline__c) return 'offer-card__deadline';
+        const deadline = new Date(this.offer.Deadline__c);
+        return deadline < new Date()
+            ? 'offer-card__deadline offer-card__deadline--expired'
+            : 'offer-card__deadline';
+    }
+
+    // ── ✅ Clic sur toute la carte ────────────────────────────────
+    view() {
+        this.dispatchEvent(
+            new CustomEvent('viewdetail', {
+                detail: { offerId: this.offer.Id }
+            })
+        );
+    }
 }

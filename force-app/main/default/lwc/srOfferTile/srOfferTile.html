@@ -1,27 +1,42 @@
-<template> 
-  <article class="offer-card" role="button" tabindex="0" onclick={onClick} onkeydown={onKeyDown} title={offer.Titre__c} > 
-    <header class="offer-card__head"> 
-      <h2 class="offer-card__title">{offer.Titre__c}</h2> 
-      <div class="offer-card__deadline">{deadlineText}</div> 
+<!-- force-app/main/default/lwc/srOfferTile/srOfferTile.html -->
+<template>
+  <!-- ✅ Toute la carte est cliquable + curseur pointer -->
+  <article class="offer-card" onclick={view}>
+
+    <!-- ── En-tête : Titre + Date limite ── -->
+    <header class="offer-card__head">
+      <h2 class="offer-card__title">{titreText}</h2>
+      <div class={deadlineClass}>{deadlineText}</div>
     </header>
 
+    <!-- ── Description (3 lignes max) ── -->
     <section class="offer-card__section">
-      <div class="offer-card__label">Description</div>
-      <p class="offer-card__text">{descriptionText}</p>
+      <div class="offer-card__label">
+        <lightning-icon icon-name="utility:description" size="xx-small" class="slds-m-right_xx-small"></lightning-icon>
+        Description
+      </div>
+      <p class="offer-card__text offer-card__text--clamp">{descriptionText}</p>
     </section>
 
+    <!-- ── Département ── -->
     <section class="offer-card__section">
-      <div class="offer-card__label">Departement</div>
+      <div class="offer-card__label">
+        <lightning-icon icon-name="utility:office365" size="xx-small" class="slds-m-right_xx-small"></lightning-icon>
+        Département
+      </div>
       <p class="offer-card__text">{departementText}</p>
     </section>
 
+    <!-- ── Localisation ── -->
     <section class="offer-card__section">
-      <div class="offer-card__label">Localisation</div>
+      <div class="offer-card__label">
+        <lightning-icon icon-name="utility:location" size="xx-small" class="slds-m-right_xx-small"></lightning-icon>
+        Localisation
+      </div>
       <p class="offer-card__text">{localisationText}</p>
     </section>
 
-    <footer class="offer-card__foot">
-      <span class="offer-card__cta"></span>
-    </footer>
-  </article> 
+    <!-- ✅ Footer supprimé (bouton "Voir l'offre" retiré) -->
+
+  </article>
 </template>

@@ -4,29 +4,33 @@
     padding: 16px;
 }
 
-.loading {
-    display: flex;
-    justify-content: center;
-    padding: 48px;
-}
-
-.empty {
-    text-align: center;
-    padding: 48px;
-    color: #706e6b;
-    font-size: 1rem;
-}
-
+/* Grille 2 colonnes */
 .grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(380px, 1fr));
-    gap: 24px;
+    grid-template-columns: repeat(2, minmax(420px, 1fr));
+    gap: 28px;
 }
 
 @media (max-width: 920px) {
     .grid { grid-template-columns: 1fr; }
 }
 
+/* Message vide */
+.empty-msg {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-size: 1rem;
+}
+
+/* Spinner centré */
+.loading-wrapper {
+    display: flex;
+    justify-content: center;
+    padding: 40px;
+}
+
+/* Overlay */
 .overlay {
     position: fixed;
     inset: 0;
@@ -35,14 +39,15 @@
     align-items: flex-start;
     justify-content: center;
     padding: 28px;
-    z-index: 9000;
-    overflow-y: auto;
+    z-index: 5000;
 }
 
 .overlay__card {
-    background: #fff;
-    border-radius: 12px;
-    width: 100%;
-    max-width: 780px;
-    box-shadow: 0 8px 32px rgba(0,0,0,.25);
+    width: min(960px, 96vw);
+    animation: pop .12s ease-out;
+}
+
+@keyframes pop {
+    from { transform: scale(.98); opacity: .9; }
+    to   { transform: scale(1);   opacity: 1;  }
 }

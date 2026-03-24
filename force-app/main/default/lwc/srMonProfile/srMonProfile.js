@@ -1,5 +1,4 @@
-// force-app/main/default/lwc/srMonProfile/srMonProfile.js
-import { LightningElement, track } from 'lwc';
+import { LightningElement, track, wire } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import getUserProfile    from '@salesforce/apex/SR_UserProfileController.getUserProfile';
 import updateUserProfile from '@salesforce/apex/SR_UserProfileController.updateUserProfile';
@@ -7,101 +6,118 @@ import getMyCandidatures from '@salesforce/apex/SR_UserProfileController.getMyCa
 
 export default class SrMonProfile extends LightningElement {
 
-    // ── Infos personnelles ──────────────────────────────────────────────────
-    @track firstName  = '';
-    @track lastName   = '';
-    @track email      = '';
-    @track phone      = '';
-    loading           = true;
-    saving            = false;
-    saveSuccess       = false;
-    saveError         = '';
+    // ── Infos personnelles ──────────────────────────────────────────
+    @track firstName   = '';
+    @track lastName    = '';
+    @track email       = '';
+    @track phone       = '';
+    @track loading     = true;
+    @track saving      = false;
+    @track saveSuccess = false;
+    @track saveError   = null;
 
-    // ── Candidatures ────────────────────────────────────────────────────────
-    @track candidatures       = [];
-    loadingCandidatures       = true;
+    // ── Candidatures ────────────────────────────────────────────────
+    @track candidatures        = [];
+    @track loadingCandidatures = true;
 
+    // ── Getters ─────────────────────────────────────────────────────
+    get hasCandidatures() {
+        return this.candidatures && this.candidatures.length > 0;
+    }
+
+    // ── Chargement du profil ─────────────────────────────────────────
     connectedCallback() {
         this.loadProfile();
         this.loadCandidatures();
     }
 
-    // ── Chargement profil ───────────────────────────────────────────────────
-    async loadProfile() {
+    loadProfile() {
         this.loading = true;
-        try {
-            const p = await getUserProfile();
-            this.firstName = p.firstName || '';
-            this.lastName  = p.lastName  || '';
-            this.email     = p.email     || '';
-            this.phone     = p.phone     || '';
-        } catch (e) {
-            this.toast('Erreur', this.err(e), 'error');
-        } finally {
-            this.loading = false;
-        }
-    }
-
-    // ── Chargement candidatures ─────────────────────────────────────────────
-    async loadCandidatures() {
-        this.loadingCandidatures = true;
-        try {
-            const rows = await getMyCandidatures();
-            this.candidatures = (rows || []).map(c => ({
-                ...c,
-                formattedDate : c.CreatedDate ? new Date(c.CreatedDate).toLocaleDateString('fr-FR') : '',
-                statutClass   : this.getStatutClass(c.Statut__c)
-            }));
-        } catch (e) {
-            this.toast('Erreur', this.err(e), 'error');
-        } finally {
-            this.loadingCandidatures = false;
-        }
-    }
-
-    // ── Changement champ ────────────────────────────────────────────────────
-    onChange(evt) {
-        const field = evt.target.dataset.field;
-        this[field] = evt.target.value;
-        this.saveSuccess = false;
-        this.saveError   = '';
-    }
-
-    // ── Enregistrement ──────────────────────────────────────────────────────
-    async handleSave() {
-        this.saving      = true;
-        this.saveSuccess = false;
-        this.saveError   = '';
-        try {
-            await updateUserProfile({
-                firstName : this.firstName,
-                lastName  : this.lastName,
-                email     : this.email,
-                phone     : this.phone
+        getUserProfile()
+            .then(data => {
+                this.firstName = data.firstName || '';
+                this.lastName  = data.lastName  || '';
+                this.email     = data.email     || '';
+                this.phone     = data.phone     || '';
+                this.loading   = false;
+            })
+            .catch(error => {
+                this.loading = false;
+                console.error('Erreur profil:', error);
             });
-            this.saveSuccess = true;
-            this.toast('Succès', 'Profil mis à jour avec succès !', 'success');
-        } catch (e) {
-            this.saveError = this.err(e);
-        } finally {
-            this.saving = false;
-        }
     }
 
-    // ── Getters ─────────────────────────────────────────────────────────────
-    get hasCandidatures() { return this.candidatures.length > 0; }
+    // ── Chargement des candidatures ──────────────────────────────────
+    loadCandidatures() {
+        this.loadingCandidatures = true;
+        getMyCandidatures()
+            .then(data => {
+                // ✅ Mapping des champs pour le HTML
+                this.candidatures = data.map(c => ({
+                    Id           : c.Id,
+                    titrOffre    : c.Offre__r ? c.Offre__r.Titre__c       : '—',
+                    departement  : c.Offre__r ? c.Offre__r.Departement__c : '—',
+                    localisation : c.Offre__r ? c.Offre__r.Localisation__c: '—',
+                    Statut__c    : c.Statut__c || '—',
+                    statutClass  : this.getStatutClass(c.Statut__c),
+                    // ✅ DateDepot__c affiché en priorité, sinon CreatedDate
+                    formattedDate: this.formatDate(c.DateDepot__c || c.CreatedDate)
+                }));
+                this.loadingCandidatures = false;
+            })
+            .catch(error => {
+                this.loadingCandidatures = false;
+                console.error('Erreur candidatures:', error);
+            });
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────
+    formatDate(dateStr) {
+        if (!dateStr) return '—';
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('fr-FR', {
+            day  : '2-digit',
+            month: '2-digit',
+            year : 'numeric'
+        });
+    }
 
     getStatutClass(statut) {
-        const base = 'statut-badge ';
-        if (!statut) return base + 'statut--default';
-        const s = statut.toLowerCase();
-        if (s.includes('accept') || s.includes('valid')) return base + 'statut--success';
-        if (s.includes('refus') || s.includes('rejet'))  return base + 'statut--error';
-        if (s.includes('soumis') || s.includes('cours')) return base + 'statut--info';
-        return base + 'statut--default';
+        const map = {
+            'Soumise'  : 'badge badge--blue',
+            'En cours' : 'badge badge--orange',
+            'Acceptée' : 'badge badge--green',
+            'Refusée'  : 'badge badge--red'
+        };
+        return map[statut] || 'badge';
     }
 
-    // ── Utilitaires ─────────────────────────────────────────────────────────
-    toast(title, message, variant) { this.dispatchEvent(new ShowToastEvent({ title, message, variant })); }
-    err(e) { const b = e?.body || {}; return b?.message || e?.message || 'Une erreur est survenue'; }
+    // ── Changement de champ ──────────────────────────────────────────
+    onChange(event) {
+        const field = event.target.dataset.field;
+        this[field] = event.target.value;
+    }
+
+    // ── Sauvegarde du profil ─────────────────────────────────────────
+    handleSave() {
+        this.saving      = true;
+        this.saveSuccess = false;
+        this.saveError   = null;
+
+        updateUserProfile({
+            firstName : this.firstName,
+            lastName  : this.lastName,
+            email     : this.email,
+            phone     : this.phone
+        })
+        .then(() => {
+            this.saving      = false;
+            this.saveSuccess = true;
+            setTimeout(() => { this.saveSuccess = false; }, 3000);
+        })
+        .catch(error => {
+            this.saving    = false;
+            this.saveError = error.body?.message || 'Erreur inconnue';
+        });
+    }
 }

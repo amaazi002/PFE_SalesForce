@@ -4,25 +4,58 @@ import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import getOffers from '@salesforce/apex/SR_OfferController.getPublicOffers';
 
 export default class SrPortalHome extends LightningElement {
-  @track offers = [];
-  @track selectedOfferId = null;
-  loadingOffers = false;
 
-  connectedCallback() { this.loadOffers(); }
+    // ── État ────────────────────────────────────────────────────────
+    @track offers          = [];
+    @track loadingOffers   = true;
+    @track selectedOfferId = null;
 
-  async loadOffers() {
-    this.loadingOffers = true;
-    try {
-      const rows = await getOffers({ limitSize: 100 });
-      this.offers = rows || [];
-    } catch (e) { this.toast('Erreur', this.err(e), 'error'); }
-    finally { this.loadingOffers = false; }
-  }
+    // ── Getter ──────────────────────────────────────────────────────
+    get hasOffers() {
+        return this.offers && this.offers.length > 0;
+    }
 
-  handleViewDetail = (evt) => { this.selectedOfferId = evt?.detail?.offerId || null; };
-  closeDetail = () => { this.selectedOfferId = null; };
-  stop = (evt) => evt.stopPropagation();
+    // ── Lifecycle ───────────────────────────────────────────────────
+    connectedCallback() {
+        this.loadOffers();
+    }
 
-  toast(title, message, variant) { this.dispatchEvent(new ShowToastEvent({ title, message, variant })); }
-  err(e) { const b = e?.body || {}; return b?.message || e?.message || 'Une erreur est survenue'; }
+    // ── Chargement des offres ────────────────────────────────────────
+    async loadOffers() {
+        this.loadingOffers = true;
+      try {
+          const rows = await getOffers({ limitSize: 100 });
+          console.log('Offres reçues :', JSON.stringify(rows)); // ← AJOUTE ÇA
+          this.offers = rows || [];
+      } catch (e) {
+          console.error('Erreur getOffers :', JSON.stringify(e)); // ← AJOUTE ÇA
+          this.toast('Erreur', this.err(e), 'error');
+          this.offers = [];
+      } finally {
+          this.loadingOffers = false;
+      }
+    }
+
+    // ── Détail offre ─────────────────────────────────────────────────
+    handleViewDetail(evt) {
+        this.selectedOfferId = evt?.detail?.offerId || null;
+    }
+
+    closeDetail() {
+        this.selectedOfferId = null;
+    }
+
+    stop(evt) {
+        evt.stopPropagation();
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────
+    toast(title, message, variant) {
+        this.dispatchEvent(new ShowToastEvent({ title, message, variant }));
+    }
+
+    err(e) {
+        const b = e?.body || {};
+        return b?.message || e?.message || 'Une erreur est survenue';
+    }
 }

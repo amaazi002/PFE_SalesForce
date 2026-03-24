@@ -61,9 +61,9 @@
               <tbody>
                 <template for:each={candidatures} for:item="c">
                   <tr key={c.Id}>
-                    <td>{c.Offre__r.Titre__c}</td>
-                    <td>{c.Offre__r.Departement__c}</td>
-                    <td>{c.Offre__r.Localisation__c}</td>
+                    <td>{c.titrOffre}</td>
+                    <td>{c.departement}</td>
+                    <td>{c.localisation}</td>
                     <td><span class={c.statutClass}>{c.Statut__c}</span></td>
                     <td>{c.formattedDate}</td>
                   </tr>

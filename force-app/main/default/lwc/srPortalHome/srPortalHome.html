@@ -2,15 +2,37 @@
 <template>
   <div class="page">
 
-    <c-sr-header-auth></c-sr-header-auth>
+    <!-- ── Chargement ── -->
+    <template if:true={loadingOffers}>
+      <div class="loading-wrapper">
+        <lightning-spinner alternative-text="Chargement des offres..." size="medium"></lightning-spinner>
+      </div>
+    </template>
 
-    <div class="grid">
-      <template for:each={offers} for:item="o">
-        <c-sr-offer-tile key={o.Id} offer={o} onviewdetail={handleViewDetail}></c-sr-offer-tile>
+    <!-- ── Grille des offres ── -->
+    <template if:false={loadingOffers}>
+
+      <template if:true={hasOffers}>
+        <div class="grid">
+          <template for:each={offers} for:item="o">
+            <c-sr-offer-tile
+              key={o.Id}
+              offer={o}
+              onviewdetail={handleViewDetail}>
+            </c-sr-offer-tile>
+          </template>
+        </div>
       </template>
-    </div>
 
-    <!-- Overlay : grande carte Détail -->
+      <template if:false={hasOffers}>
+        <div class="empty-msg">
+          <p>Aucune offre disponible pour le moment.</p>
+        </div>
+      </template>
+
+    </template>
+
+    <!-- ── Overlay détail offre ── -->
     <template if:true={selectedOfferId}>
       <div class="overlay" role="dialog" aria-modal="true" onclick={closeDetail}>
         <div class="overlay__card" onclick={stop}>
