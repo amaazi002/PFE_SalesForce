@@ -23,22 +23,24 @@ export default class SrPortalHome extends LightningElement {
     // ── Chargement des offres ────────────────────────────────────────
     async loadOffers() {
         this.loadingOffers = true;
-      try {
-          const rows = await getOffers({ limitSize: 100 });
-          console.log('Offres reçues :', JSON.stringify(rows)); // ← AJOUTE ÇA
-          this.offers = rows || [];
-      } catch (e) {
-          console.error('Erreur getOffers :', JSON.stringify(e)); // ← AJOUTE ÇA
-          this.toast('Erreur', this.err(e), 'error');
-          this.offers = [];
-      } finally {
-          this.loadingOffers = false;
-      }
+        try {
+            const rows = await getOffers({ limitSize: 100 });
+            this.offers = rows || [];
+            console.log('Offres chargées:', this.offers.length);
+        } catch (e) {
+            console.error('Erreur getOffers:', JSON.stringify(e));
+            this.toast('Erreur', this.err(e), 'error');
+            this.offers = [];
+        } finally {
+            this.loadingOffers = false;
+        }
     }
 
     // ── Détail offre ─────────────────────────────────────────────────
     handleViewDetail(evt) {
-        this.selectedOfferId = evt?.detail?.offerId || null;
+        const id = evt?.detail?.offerId || null;
+        console.log('handleViewDetail offerId:', id);
+        this.selectedOfferId = id;
     }
 
     closeDetail() {

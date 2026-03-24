@@ -1,39 +1,29 @@
-
-.apply-form {
-  background-color: #F5F5F5;
-  padding: 2rem;
-  border-radius: 8px;
+.file-upload-wrapper {
+    margin-top: 8px;
 }
 
-.form-group label {
-  color: #4A4A4A;
-  font-weight: 500;
-  margin-bottom: 0.5rem;
+.file-label {
+    display: inline-block;
+    padding: 10px 20px;
+    background: #0070d2;
+    color: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: background .2s;
 }
 
-.form-control {
-  border: 1px solid #E0E0E0;
-  border-radius: 4px;
-  padding: 0.75rem 1rem;
-  transition: all 0.3s ease;
+.file-label:hover {
+    background: #005fb2;
 }
 
-.form-control:focus {
-  border-color: #D04A02;
-  box-shadow: 0 0 0 0.2rem rgba(208, 74, 2, 0.25);
+/* ✅ Cache l'input natif, garde le label stylisé */
+.file-input {
+    display: none;
 }
 
-.btn-primary {
-  background-color: #D04A02;
-  border-color: #D04A02;
-  color: #FFFFFF;
-  padding: 0.75rem 1.5rem;
-  font-weight: 500;
-  border-radius: 4px;
-  transition: all 0.3s ease;
-}
-
-.btn-primary:hover {
-  background-color: #A93B01;
-  border-color: #A93B01;
+.file-name {
+    margin-top: 8px;
+    color: #333;
+    font-size: 0.9rem;
 }

@@ -8,7 +8,11 @@ export default class SrOfferDetail extends LightningElement {
   // État local de la modale Postuler
   showApply = false;
 
-  connectedCallback() { this.load(); }
+  connectedCallback() { 
+    console.log('srOfferDetail offerId reçu:', this.offerId);
+    this.load(); 
+  }
+
 
   async load() {
     try {
@@ -27,7 +31,10 @@ export default class SrOfferDetail extends LightningElement {
   close = () => this.dispatchEvent(new CustomEvent('close'));
 
   // Modale Postuler (ouverture/fermeture)
-  openApply = () => { this.showApply = true; };
+  openApply = () => { 
+    console.log('openApply offerId:' , this.offerId);
+    this.showApply = true; 
+  };
   hideApply = () => { this.showApply = false; };
 
   // Empêche la propagation (clic dans la modale)

@@ -30,20 +30,22 @@
     padding: 40px;
 }
 
-/* Overlay */
+/* ✅ Overlay position:fixed → ne perturbe pas la grille */
 .overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,.45);
+    background: rgba(0, 0, 0, .45);
     display: flex;
     align-items: flex-start;
     justify-content: center;
     padding: 28px;
     z-index: 5000;
+    overflow-y: auto;
 }
 
 .overlay__card {
     width: min(960px, 96vw);
+    margin: auto;
     animation: pop .12s ease-out;
 }
 
