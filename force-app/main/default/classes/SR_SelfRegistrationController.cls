@@ -52,7 +52,13 @@ public without sharing class SR_SelfRegistrationController {
             String password,
             String confirmPassword,
             String otpCode) {
-
+        System.debug('=== verifyOtpAndRegister ===');
+        System.debug('email:'                          + email);
+        System.debug('password:'                       + password);
+        System.debug('confirmPassword:'                + confirmPassword);
+        System.debug('otpCode:'                        + otpCode);
+        System.debug('password == confirmPassword: ' + (password == confirmPassword));
+        System.debug('=========================');
         if (String.isBlank(email) || String.isBlank(otpCode))
             throw new AuraHandledException('Email et code OTP sont obligatoires.');
         if (String.isBlank(password) || password != confirmPassword)

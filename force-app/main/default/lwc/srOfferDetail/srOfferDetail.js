@@ -1,49 +1,43 @@
 import { LightningElement, api, track } from 'lwc';
+import { NavigationMixin } from 'lightning/navigation';
 import getOffer from '@salesforce/apex/SR_OfferController.getOfferById';
 
-export default class SrOfferDetail extends LightningElement {
-  @api offerId;         // l'Id de l'offre arrive du parent
-  @track offer = {};
+export default class SrOfferDetail extends NavigationMixin(LightningElement) {
 
-  // État local de la modale Postuler
-  showApply = false;
+    @api offerId;
+    @track offer = {};
 
-  connectedCallback() { 
-    console.log('srOfferDetail offerId reçu:', this.offerId);
-    this.load(); 
-  }
+    connectedCallback() { this.load(); }
 
+    async load() {
+        try {
+            const o = await getOffer({ offreId: this.offerId });
+            this.offer = o || {};
+        } catch(e) {
+            console.error('Erreur chargement offre:', e);
+        }
+    }
 
-  async load() {
-    try {
-      const o = await getOffer({ offreId: this.offerId });
-      this.offer = o || {};
-    } catch(e) {}
-  }
+    get deadlineText() {
+        return this.offer?.Deadline__c
+            ? new Date(this.offer.Deadline__c).toLocaleDateString('fr-FR')
+            : '';
+    }
 
-  get deadlineText() {
-    return this.offer?.Deadline__c
-      ? new Date(this.offer.Deadline__c).toLocaleDateString()
-      : '';
-  }
+    close = () => this.dispatchEvent(new CustomEvent('close'));
 
-  // Overlay Détail
-  close = () => this.dispatchEvent(new CustomEvent('close'));
+    // ✅ Stocker offerId dans sessionStorage avant de naviguer
+    openApply = () => {
+        sessionStorage.setItem('applyOfferId',   this.offerId);
+        sessionStorage.setItem('applyOfferName', this.offer?.Titre__c || '');
 
-  // Modale Postuler (ouverture/fermeture)
-  openApply = () => { 
-    console.log('openApply offerId:' , this.offerId);
-    this.showApply = true; 
-  };
-  hideApply = () => { this.showApply = false; };
+        this[NavigationMixin.Navigate]({
+            type: 'comm__namedPage',
+            attributes: {
+                name: 'candidature__c'
+            }
+        });
+    }
 
-  // Empêche la propagation (clic dans la modale)
-  stop = (evt) => evt.stopPropagation();
-
-  // Candidature terminée : fermer la modale (et optionnellement la carte)
-  applyDone = () => {
-    this.showApply = false;
-    // Option : aussi fermer l'overlay Détail :
-    // this.close();
-  };
+    stop = (e) => e.stopPropagation();
 }

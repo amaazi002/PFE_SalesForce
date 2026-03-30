@@ -5,106 +5,183 @@ import { ShowToastEvent }   from 'lightning/platformShowToastEvent';
 
 export default class SrRegisterForm extends LightningElement {
 
-  @track firstName = '';
-  @track lastName  = '';
-  @track email     = '';
-  @track password  = '';
-  @track confirm   = '';
-  @track otpCode   = '';
+    @track firstName = '';
+    @track lastName  = '';
+    @track email     = '';
+    @track otpCode   = '';
 
-  @track step      = 1;
-  @track hasErrors = false;
-  @track errorText = '';
-  @track isLoading = false;
+    // ✅ password et confirm NON @track pour éviter la perte de valeur
+    password = '';
+    confirm  = '';
 
-  // ── Getters ───────────────────────────────────────────────────
-  get isStep1()       { return this.step === 1; }
-  get isStep2()       { return this.step === 2; }
-  get labelContinue() { return this.isLoading ? 'Envoi en cours...' : 'Continuer'; }
-  get labelRegister() { return this.isLoading ? 'Création...'       : 'Créer mon compte'; }
+    @track step      = 1;
+    @track hasErrors = false;
+    @track errorText = '';
+    @track isLoading = false;
 
-  // ── Champs ────────────────────────────────────────────────────
-  onFirst   = (e) => { this.firstName = e.target.value; }
-  onLast    = (e) => { this.lastName  = e.target.value; }
-  onEmail   = (e) => { this.email     = e.target.value; }
-  onPass    = (e) => { this.password  = e.target.value; }
-  onConfirm = (e) => { this.confirm   = e.target.value; }
-  onOtp     = (e) => { this.otpCode   = e.target.value; }
+    // ── Getters ───────────────────────────────────────────────────
+    get isStep1()       { return this.step === 1; }
+    get isStep2()       { return this.step === 2; }
+    get labelContinue() { return this.isLoading ? 'Envoi en cours...' : 'Continuer'; }
+    get labelRegister() { return this.isLoading ? 'Création...'       : 'Créer mon compte'; }
 
-  // ── Navigation ────────────────────────────────────────────────
-  handleCancel = () => this.dispatchEvent(new CustomEvent('cancel'));
-  goBack       = () => { this.step = 1; this.clearError(); }
-
-  // ── Validation étape 1 ────────────────────────────────────────
-  validateForm() {
-    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!this.firstName.trim() || !this.lastName.trim() ||
-        !this.email.trim() || !this.password || !this.confirm) {
-      this.setError('Tous les champs sont obligatoires.'); return false;
+    // ── Base URL ──────────────────────────────────────────────────
+    get basePath() {
+        const p = window.location.pathname || '/';
+        const i = p.indexOf('/smartrec/');
+        return (i >= 0) ? p.substring(0, i + '/smartrec/'.length) : '/smartrec/';
     }
-    if (!emailRe.test(this.email.trim())) {
-      this.setError('Adresse email invalide.'); return false;
-    }
-    if (this.password !== this.confirm) {
-      this.setError('Les mots de passe ne correspondent pas.'); return false;
-    }
-    if (this.password.length < 8) {
-      this.setError('Mot de passe trop court (min 8 caractères).'); return false;
-    }
-    this.clearError();
-    return true;
-  }
 
-  // ── Étape 1 → envoyer OTP ─────────────────────────────────────
-  async handleContinue() {
-    if (!this.validateForm()) return;
-    this.isLoading = true;
-    try {
-      await sendOtp({
-        firstName       : this.firstName.trim(),
-        lastName        : this.lastName.trim(),
-        email           : this.email.trim(),
-        password        : this.password,
-        confirmPassword : this.confirm
-      });
-      this.step = 2;
-      this.clearError();
-    } catch (e) {
-      this.setError(this.extractMsg(e));
-    } finally {
-      this.isLoading = false;
-    }
-  }
+    // ── Champs ────────────────────────────────────────────────────
+    onFirst   = (e) => { this.firstName = e.detail.value; }
+    onLast    = (e) => { this.lastName  = e.detail.value; }
+    onEmail   = (e) => { this.email     = e.detail.value; }
+    onOtp     = (e) => { this.otpCode   = e.detail.value; }
 
-  // ── Étape 2 → vérifier OTP et créer le compte ─────────────────
-  async handleRegister() {
-    if (!this.otpCode || this.otpCode.trim().length !== 6) {
-      this.setError('Veuillez saisir le code à 6 chiffres reçu par email.');
-      return;
+    // ✅ Stocker password dans sessionStorage immédiatement
+    onPass = (e) => {
+        this.password = e.detail.value;
+        sessionStorage.setItem('regPassword', this.password);
     }
-    this.isLoading = true;
-    try {
-      await verifyOtpAndRegister({
-        firstName : this.firstName.trim(),
-        lastName  : this.lastName.trim(),
-        email     : this.email.trim(),
-        password  : this.password,
-        otpCode   : this.otpCode.trim()
-      });
-      this.toast('Succès', 'Compte créé ! Connectez-vous pour postuler.', 'success');
-      this.dispatchEvent(new CustomEvent('registered'));
-    } catch (e) {
-      this.setError(this.extractMsg(e));
-    } finally {
-      this.isLoading = false;
+    onConfirm = (e) => {
+        this.confirm = e.detail.value;
+        sessionStorage.setItem('regConfirm', this.confirm);
     }
-  }
 
-  // ── Helpers ───────────────────────────────────────────────────
-  setError(msg) { this.hasErrors = true;  this.errorText = msg; }
-  clearError()  { this.hasErrors = false; this.errorText = '';  }
-  extractMsg(e) { return e?.body?.message || e?.message || 'Une erreur est survenue.'; }
-  toast(title, message, variant) {
-    this.dispatchEvent(new ShowToastEvent({ title, message, variant }));
-  }
+    // ── Navigation ────────────────────────────────────────────────
+    handleCancel = () => {
+        sessionStorage.removeItem('regPassword');
+        sessionStorage.removeItem('regConfirm');
+        window.location.href = this.basePath + 'login';
+    }
+
+    goBack = () => {
+        this.step = 1;
+        this.clearError();
+        // ✅ Restaurer les valeurs depuis sessionStorage
+        this.password = sessionStorage.getItem('regPassword') || '';
+        this.confirm  = sessionStorage.getItem('regConfirm')  || '';
+    }
+
+    // ── Validation étape 1 ────────────────────────────────────────
+    validateForm() {
+        const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!this.firstName.trim() || !this.lastName.trim() ||
+            !this.email.trim() || !this.password || !this.confirm) {
+            this.setError('Tous les champs sont obligatoires.'); return false;
+        }
+        if (!emailRe.test(this.email.trim())) {
+            this.setError('Adresse email invalide.'); return false;
+        }
+        if (this.password !== this.confirm) {
+            this.setError('Les mots de passe ne correspondent pas.'); return false;
+        }
+        if (this.password.length < 8) {
+            this.setError('Mot de passe trop court (min 8 caractères).'); return false;
+        }
+        this.clearError();
+        return true;
+    }
+
+    // ── Étape 1 → envoyer OTP ─────────────────────────────────────
+    async handleContinue() {
+        // ✅ Restaurer depuis sessionStorage si appelé depuis étape 2 (Renvoyer)
+        if (this.step === 2) {
+            this.password = sessionStorage.getItem('regPassword') || this.password;
+            this.confirm  = sessionStorage.getItem('regConfirm')  || this.confirm;
+        }
+
+        if (!this.validateForm()) return;
+        this.isLoading = true;
+        try {
+            await sendOtp({
+                firstName      : this.firstName.trim(),
+                lastName       : this.lastName.trim(),
+                email          : this.email.trim(),
+                password       : this.password,
+                confirmPassword: this.confirm
+            });
+
+            // ✅ Sauvegarder pour étape 2
+            sessionStorage.setItem('regPassword', this.password);
+            sessionStorage.setItem('regConfirm',  this.confirm);
+            sessionStorage.setItem('regFirstName', this.firstName.trim());
+            sessionStorage.setItem('regLastName',  this.lastName.trim());
+            sessionStorage.setItem('regEmail',     this.email.trim());
+
+            this.step = 2;
+            this.clearError();
+            this.toast('Info', 'Code envoyé à ' + this.email, 'info');
+        } catch (e) {
+            this.setError(this.extractMsg(e));
+        } finally {
+            this.isLoading = false;
+        }
+    }
+
+    // ── Étape 2 → vérifier OTP et créer le compte ─────────────────
+    async handleRegister() {
+        if (!this.otpCode || this.otpCode.trim().length !== 6) {
+            this.setError('Veuillez saisir le code à 6 chiffres reçu par email.');
+            return;
+        }
+        this.isLoading = true;
+        try {
+            // ✅ Toujours récupérer depuis sessionStorage
+            const pwd       = sessionStorage.getItem('regPassword')  || this.password;
+            const confirm   = sessionStorage.getItem('regConfirm')   || this.confirm;
+            const firstName = sessionStorage.getItem('regFirstName') || this.firstName.trim();
+            const lastName  = sessionStorage.getItem('regLastName')  || this.lastName.trim();
+            const email     = sessionStorage.getItem('regEmail')     || this.email.trim();
+
+            console.log('=== handleRegister ===');
+            console.log('firstName:', firstName);
+            console.log('lastName:', lastName);
+            console.log('email:', email);
+            console.log('pwd vide ?', !pwd);
+            console.log('confirm vide ?', !confirm);
+            console.log('pwd === confirm ?', pwd === confirm);
+            console.log('otpCode:', this.otpCode.trim());
+            console.log('sessionStorage regPassword:', sessionStorage.getItem('regPassword'));
+            console.log('sessionStorage regConfirm:', sessionStorage.getItem('regConfirm'));
+            console.log('====================');
+
+
+            await verifyOtpAndRegister({
+                firstName      : firstName,
+                lastName       : lastName,
+                email          : email,
+                password       : pwd,
+                confirmPassword: confirm,
+                otpCode        : this.otpCode.trim()
+            });
+
+            // ✅ Nettoyer sessionStorage
+            sessionStorage.removeItem('regPassword');
+            sessionStorage.removeItem('regConfirm');
+            sessionStorage.removeItem('regFirstName');
+            sessionStorage.removeItem('regLastName');
+            sessionStorage.removeItem('regEmail');
+
+            this.toast('Succès', 'Compte créé ! Connectez-vous pour postuler.', 'success');
+
+            // ✅ Redirection vers login après 2 secondes
+            setTimeout(() => {
+                window.location.href = this.basePath + 'login';
+            }, 2000);
+
+        } catch (e) {
+            this.setError(this.extractMsg(e));
+        } finally {
+            this.isLoading = false;
+        }
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────
+    setError(msg)  { this.hasErrors = true;  this.errorText = msg; }
+    clearError()   { this.hasErrors = false; this.errorText = '';  }
+    extractMsg(e)  { return e?.body?.message || e?.message || 'Une erreur est survenue.'; }
+    toast(title, message, variant) {
+        this.dispatchEvent(new ShowToastEvent({ title, message, variant }));
+    }
 }

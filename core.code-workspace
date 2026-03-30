@@ -1,0 +1,19 @@
+{
+  "folders": [
+    {
+      "path": "c:/Users/amaazi002/OneDrive - PwC/Bureau/PFE_SF"
+    }
+  ],
+  "settings": {
+    "eslint.workingDirectories": [
+      "c:/Users/amaazi002/OneDrive - PwC/Bureau/PFE_SF"
+    ],
+    "eslint.validate": [
+      "javascript",
+      "typescript"
+    ],
+    "eslint.options": {
+      "overrideConfigFile": "c:\\Users\\amaazi002\\OneDrive - PwC\\Bureau\\PFE_SF\\.eslintrc.json"
+    }
+  }
+}

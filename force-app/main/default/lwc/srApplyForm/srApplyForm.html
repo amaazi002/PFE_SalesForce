@@ -1,128 +1,265 @@
+<!-- force-app/main/default/lwc/srApplyForm/srApplyForm.html -->
 <template>
-  <section class="modal slds-modal slds-fade-in-open" role="dialog" aria-modal="true">
-    <div class="slds-modal__container">
+  <div class="apply-page">
 
-      <header class="slds-modal__header">
-        <h2 class="slds-text-heading_medium">Postuler</h2>
-        <button class="slds-button slds-button_icon slds-modal__close" title="Fermer" onclick={close}>
-          <lightning-icon icon-name="utility:close" alternative-text="Fermer" size="small"></lightning-icon>
-        </button>
-      </header>
+    <!-- ── En-tête ── -->
+    <div class="apply-header">
+      <h1 class="apply-title">Formulaire de candidature</h1>
+      <template if:true={offerName}>
+        <p class="apply-subtitle">Offre : <strong>{offerName}</strong></p>
+      </template>
+    </div>
 
-      <div class="slds-modal__content slds-p-around_medium">
+    <!-- ── Stepper ── -->
+    <div class="stepper">
+      <div class={stepClass1}>
+        <div class="step-circle">1</div>
+        <span class="step-label">Informations personnelles</span>
+      </div>
+      <div class="step-line"></div>
+      <div class={stepClass2}>
+        <div class="step-circle">2</div>
+        <span class="step-label">Compétences</span>
+      </div>
+      <div class="step-line"></div>
+      <div class={stepClass3}>
+        <div class="step-circle">3</div>
+        <span class="step-label">Confirmation</span>
+      </div>
+    </div>
 
-        <!-- Offre (lecture seule) -->
-        <div class="slds-grid slds-wrap slds-gutters slds-m-bottom_small">
-          <div class="slds-col slds-size_1-of-1">
-            <lightning-input type="text" label="Offre" value={offerName} disabled></lightning-input>
+    <div class="apply-body">
+
+      <template if:true={isSubmitting}>
+        <lightning-spinner alternative-text="Traitement..." size="small"></lightning-spinner>
+      </template>
+
+      <!-- ══════════════════════════════════════════════════════ -->
+      <!-- ── ÉTAPE 1 : Informations personnelles + CV ───────── -->
+      <!-- ══════════════════════════════════════════════════════ -->
+      <template if:true={isStep1}>
+
+        <!-- Identité -->
+        <div class="section">
+          <h2 class="section-title">Identité</h2>
+          <div class="form-grid">
+            <lightning-input
+              type="text"
+              label="Prénom"
+              value={firstName}
+              onchange={onFirst}
+              required>
+            </lightning-input>
+            <lightning-input
+              type="text"
+              label="Nom"
+              value={lastName}
+              onchange={onLast}
+              required>
+            </lightning-input>
+            <lightning-input
+              type="email"
+              label="Email"
+              value={email}
+              onchange={onEmail}
+              required>
+            </lightning-input>
+            <lightning-input
+              type="tel"
+              label="Téléphone"
+              value={Phone}
+              onchange={onTelephone}>
+            </lightning-input>
+            <lightning-input
+              type="date"
+              label="Date de naissance"
+              value={dateNaissance}
+              onchange={onDateNaissance}>
+            </lightning-input>
+            <lightning-combobox
+              label="Sexe"
+              value={sexe}
+              options={genderOptions}
+              onchange={onSexe}>
+            </lightning-combobox>
+            <lightning-combobox
+              label="Situation familiale"
+              value={situationFamiliale}
+              options={situationOptions}
+              onchange={onSituationFamiliale}
+              class="full-width">
+            </lightning-combobox>
           </div>
         </div>
 
-        <template if:true={isSubmitting}>
-          <lightning-spinner alternative-text="Traitement..." size="small"></lightning-spinner>
-        </template>
-
-        <!-- ── Étape 1 : Formulaire (avant création candidature) ── -->
-        <template if:false={candidatureId}>
-
-          <!-- Identité -->
-          <div class="slds-grid slds-wrap slds-gutters">
-            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
-              <lightning-input type="text" label="Prénom" value={firstName} onchange={onFirst} required></lightning-input>
-            </div>
-            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
-              <lightning-input type="text" label="Nom" value={lastName} onchange={onLast} required></lightning-input>
-            </div>
-            <div class="slds-col slds-size_1-of-1">
-              <lightning-input type="email" label="Email" value={email} onchange={onEmail} required></lightning-input>
-            </div>
-          </div>
-
-          <!-- Sexe -->
-          <div class="slds-grid slds-wrap slds-gutters slds-m-top_medium">
-            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
-              <lightning-combobox label="Sexe" value={sexe} options={genderOptions} onchange={onSexe}></lightning-combobox>
-            </div>
-          </div>
-
-          <!-- Champs Candidature -->
-          <div class="slds-grid slds-wrap slds-gutters slds-m-top_medium">
-            <div class="slds-col slds-size_1-of-1">
-              <lightning-textarea label="Compétences techniques" value={tech} onchange={onTech} required></lightning-textarea>
-            </div>
-            <div class="slds-col slds-size_1-of-1">
-              <lightning-textarea label="Expérience professionnelle" value={xp} onchange={onXp} required></lightning-textarea>
-            </div>
-            <div class="slds-col slds-size_1-of-1">
-              <lightning-textarea label="Compétences personnelles" value={soft} onchange={onSoft} required></lightning-textarea>
-            </div>
-          </div>
-
-        </template>
-
-        <!-- ── Étape 2 : Upload CV (après création candidature) ── -->
-        <template if:true={candidatureId}>
-          <div class="slds-m-top_medium">
-            <div class="slds-text-color_success slds-m-bottom_small">
-              ✅ Candidature créée ! Déposez maintenant votre CV.
-            </div>
-
-            <!-- ✅ Input file natif à la place de lightning-file-upload -->
-            <div class="file-upload-wrapper">
-              <label class="file-label">
-                📎 Choisir un CV (PDF / DOC / DOCX, max 5 Mo)
-                <input
-                  type="file"
-                  accept=".pdf,.doc,.docx"
-                  class="file-input"
-                  onchange={onFileChange}>
-              </label>
-              <template if:true={fileName}>
-                <p class="file-name">📄 {fileName}</p>
-              </template>
-            </div>
-
-            <template if:true={uploadingCv}>
-              <lightning-spinner alternative-text="Upload en cours..." size="small"></lightning-spinner>
-            </template>
-
-            <template if:true={cvUploaded}>
-              <div class="slds-text-color_success slds-m-top_small">
-                ✅ CV déposé avec succès !
-              </div>
+        <!-- Upload CV -->
+        <div class="section">
+          <h2 class="section-title">Déposer votre CV</h2>
+          <div class="file-upload-wrapper">
+            <label class="file-label">
+              📎 Choisir un CV (PDF / DOC / DOCX, max 5 Mo)
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx"
+                class="file-input"
+                onchange={onFileChange}>
+            </label>
+            <template if:true={fileName}>
+              <p class="file-name">📄 {fileName}</p>
             </template>
           </div>
-        </template>
+          <template if:true={uploadingCv}>
+            <lightning-spinner alternative-text="Upload en cours..." size="small"></lightning-spinner>
+          </template>
+          <template if:true={cvUploaded}>
+            <div class="success-msg">✅ CV déposé avec succès !</div>
+          </template>
+        </div>
 
         <!-- Erreur -->
         <template if:true={lastError}>
-          <div class="slds-m-top_small slds-text-color_error">{lastError}</div>
+          <div class="alert-error">{lastError}</div>
         </template>
 
-      </div>
-
-      <footer class="slds-modal__footer">
-        <lightning-button label="Annuler" onclick={close}></lightning-button>
-        <template if:false={candidatureId}>
+        <!-- Boutons -->
+        <div class="form-actions">
           <lightning-button
-            class="slds-m-left_small"
+            label="Annuler"
+            onclick={goBack}>
+          </lightning-button>
+          <lightning-button
             variant="brand"
-            label="Créer ma candidature"
+            label="Suivant →"
+            onclick={goStep2}>
+          </lightning-button>
+        </div>
+
+      </template>
+
+      <!-- ══════════════════════════════════════════════════════ -->
+      <!-- ── ÉTAPE 2 : Compétences & Formation ──────────────── -->
+      <!-- ══════════════════════════════════════════════════════ -->
+      <template if:true={isStep2}>
+
+        <!-- Compétences -->
+        <div class="section">
+          <h2 class="section-title">Compétences & Expérience</h2>
+          <div class="form-grid">
+            <lightning-input
+              type="number"
+              label="Années d'expérience"
+              value={anneesExperience}
+              onchange={onAnneesExperience}
+              min="0"
+              step="1"
+              class="full-width">
+            </lightning-input>
+            <lightning-textarea
+              label="Compétences techniques"
+              value={tech}
+              onchange={onTech}
+              required
+              class="full-width">
+            </lightning-textarea>
+            <lightning-textarea
+              label="Expérience professionnelle"
+              value={xp}
+              onchange={onXp}
+              required
+              class="full-width">
+            </lightning-textarea>
+            <lightning-textarea
+              label="Compétences personnelles"
+              value={soft}
+              onchange={onSoft}
+              required
+              class="full-width">
+            </lightning-textarea>
+          </div>
+        </div>
+
+        <!-- Formation -->
+        <div class="section">
+          <h2 class="section-title">Formation</h2>
+          <div class="form-grid">
+            <lightning-combobox
+              label="Niveau d'étude"
+              value={niveauEtude}
+              options={niveauEtudeOptions}
+              onchange={onNiveauEtude}
+              class="full-width">
+            </lightning-combobox>
+            <lightning-input
+              type="text"
+              label="Dernier diplôme"
+              value={dernierDiplome}
+              onchange={onDernierDiplome}>
+            </lightning-input>
+            <lightning-input
+              type="text"
+              label="École / Université"
+              value={ecoleUniversite}
+              onchange={onEcoleUniversite}>
+            </lightning-input>
+            <lightning-input
+              type="number"
+              label="Année d'obtention"
+              value={anneeObtention}
+              onchange={onAnneeObtention}
+              min="1950"
+              max="2100"
+              step="1">
+            </lightning-input>
+          </div>
+        </div>
+
+        <!-- Erreur -->
+        <template if:true={lastError}>
+          <div class="alert-error">{lastError}</div>
+        </template>
+
+        <!-- Boutons -->
+        <div class="form-actions">
+          <lightning-button
+            label="← Retour"
+            onclick={goStep1}>
+          </lightning-button>
+          <lightning-button
+            variant="brand"
+            label="Soumettre ma candidature"
             onclick={submit}
             disabled={isSubmitting}>
           </lightning-button>
-        </template>
-        <template if:true={candidatureId}>
+        </div>
+
+      </template>
+
+      <!-- ══════════════════════════════════════════════════════ -->
+      <!-- ── ÉTAPE 3 : Confirmation ──────────────────────────── -->
+      <!-- ══════════════════════════════════════════════════════ -->
+      <template if:true={isStep3}>
+        <div class="section confirmation">
+          <div class="confirm-icon">🎉</div>
+          <h2 class="confirm-title">Candidature envoyée !</h2>
+          <p class="confirm-msg">
+            Merci <strong>{firstName} {lastName}</strong>,
+            votre candidature pour l'offre
+            <strong>{offerName}</strong>
+            a bien été enregistrée.
+          </p>
+          <template if:true={cvUploaded}>
+            <p class="confirm-cv">📄 Votre CV a bien été déposé.</p>
+          </template>
+        </div>
+        <div class="form-actions center">
           <lightning-button
-            class="slds-m-left_small"
             variant="brand"
-            label="Terminer"
-            onclick={finish}>
+            label="Retour aux Home"
+            onclick={goBack}>
           </lightning-button>
-        </template>
-      </footer>
+        </div>
+      </template>
 
     </div>
-  </section>
-  <div class="slds-backdrop slds-backdrop_open"></div>
+  </div>
 </template>
