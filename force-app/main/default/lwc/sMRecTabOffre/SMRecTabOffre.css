@@ -1,32 +1,35 @@
-
 .nav-tabs {
-  border-bottom: 2px solid #E0E0E0;
+    border-bottom: 2px solid #E0E0E0;
 }
-
 .nav-tabs .nav-item {
-  margin-bottom: -2px;
+    margin-bottom: -2px;
 }
-
 .nav-tabs .nav-link {
-  border: none;
-  border-bottom: 2px solid transparent;
-  color: #4A4A4A;
-  padding: 1rem 1.5rem;
-  font-weight: 500;
-  transition: all 0.3s ease;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: #4A4A4A;
+    padding: 1rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
 }
-
 .nav-tabs .nav-link:hover {
-  border-bottom: 2px solid #D04A02;
-  color: #D04A02;
+    border-bottom: 2px solid #D04A02;
+    color: #D04A02;
 }
-
 .nav-tabs .nav-link.active {
-  border-bottom: 2px solid #D04A02;
-  color: #D04A02;
-  font-weight: 700;
+    border-bottom: 2px solid #D04A02;
+    color: #D04A02;
+    font-weight: 700;
+}
+.tab-content {
+    padding: 2rem 0;
 }
 
-.tab-content {
-  padding: 2rem 0;
+/* Lignes colorées selon statut */
+.is-closed td {
+    opacity: 0.6;
+    background-color: #fff0f0 !important;
+}
+.is-draft td {
+    background-color: #fffbe6 !important;
 }

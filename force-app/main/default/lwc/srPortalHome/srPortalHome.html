@@ -1,46 +1,53 @@
-<!-- force-app/main/default/lwc/srPortalHome/srPortalHome.html -->
 <template>
-  <div class="page">
+    <div class="page">
 
-    <!-- ── Chargement ── -->
-    <template if:true={loadingOffers}>
-      <div class="loading-wrapper">
-        <lightning-spinner alternative-text="Chargement des offres..." size="medium"></lightning-spinner>
-      </div>
-    </template>
+        <!-- Chargement -->
+        <template if:true={loadingOffers}>
+            <div class="loading-wrapper">
+                <lightning-spinner
+                    alternative-text="Chargement des offres..."
+                    size="medium">
+                </lightning-spinner>
+            </div>
+        </template>
 
-    <!-- ── Grille des offres ── -->
-    <template if:false={loadingOffers}>
-      <template if:true={hasOffers}>
-        <div class="grid">
-          <template for:each={offers} for:item="o">
-            <c-sr-offer-tile
-              key={o.Id}
-              offer={o}
-              onviewdetail={handleViewDetail}>
-            </c-sr-offer-tile>
-          </template>
-        </div>
-      </template>
+        <!-- Contenu -->
+        <template if:false={loadingOffers}>
+            <template if:true={hasOffers}>
 
-      <template if:false={hasOffers}>
-        <div class="empty-msg">
-          <p>Aucune offre disponible pour le moment.</p>
-        </div>
-      </template>
-    </template>
+                <div class="page-header">
+                    <h1 class="page-title">Nos offres d'emploi</h1>
+                    <p class="page-subtitle">
+                        {offersCount} offre(s) disponible(s)
+                    </p>
+                </div>
 
-    <!-- ── Overlay détail offre (position:fixed → ne cache pas les cartes) ── -->
-    <template if:true={selectedOfferId}>
-      <div class="overlay" role="dialog" aria-modal="true" onclick={closeDetail}>
-        <div class="overlay__card" onclick={stop}>
-          <c-sr-offer-detail
-            offer-id={selectedOfferId}
-            onclose={closeDetail}>
-          </c-sr-offer-detail>
-        </div>
-      </div>
-    </template>
+                <div class="grid">
+                    <template for:each={offers} for:item="o">
+                        <c-sr-offer-tile
+                            key={o.Id}
+                            offer={o}
+                            onviewdetail={handleViewDetail}>
+                        </c-sr-offer-tile>
+                    </template>
+                </div>
 
-  </div>
+            </template>
+
+            <template if:false={hasOffers}>
+                <div class="empty-state">
+                    <lightning-icon
+                        icon-name="utility:search"
+                        size="large">
+                    </lightning-icon>
+                    <p class="empty-title">Aucune offre disponible</p>
+                    <p class="empty-text">
+                        Revenez bientôt, de nouvelles offres
+                        seront publiées prochainement.
+                    </p>
+                </div>
+            </template>
+        </template>
+
+    </div>
 </template>

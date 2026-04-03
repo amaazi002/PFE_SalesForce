@@ -1,62 +1,222 @@
-<!-- force-app/main/default/lwc/srOfferDetail/srOfferDetail.html -->
 <template>
-  <div class="detail-wrapper">
-    <article class="detail">
-      <!-- En‑tête -->
-      <header class="detail__head">
-        <h2 class="detail__title">{offer.Titre__c}</h2>
-        <button class="btn-close" title="Fermer" onclick={close} aria-label="Fermer la fenêtre">×</button>
-      </header>
+    <div class="page-wrapper">
 
-      <!-- Méta (pills) -->
-      <div class="detail__meta">
-        <template if:true={offer.Deadline__c}>
-          <span class="pill">Date limite : {deadlineText}</span>
+        <!-- LOADING -->
+        <template if:true={isLoading}>
+            <div class="loading-container">
+                <lightning-spinner
+                    alternative-text="Chargement..."
+                    size="medium">
+                </lightning-spinner>
+                <p class="loading-text">Chargement de l'offre...</p>
+            </div>
         </template>
-        <template if:true={offer.Departement__c}>
-          <span class="pill">Département : {offer.Departement__c}</span>
+
+        <!-- CONTENU -->
+        <template if:false={isLoading}>
+            <template if:true={hasOffer}>
+
+                <!-- Retour -->
+                <div class="back-bar">
+                    <button class="btn-back" onclick={handleBack}>
+                        <lightning-icon
+                            icon-name="utility:chevronleft"
+                            size="x-small">
+                        </lightning-icon>
+                        Retour aux offres
+                    </button>
+                </div>
+
+                <!-- HERO -->
+                <div class="hero">
+                    <div class="hero__content">
+                        <div class="hero__badges">
+                            <span class={statutBadgeClass}>
+                                {offer.Statut__c}
+                            </span>
+                        </div>
+                        <h1 class="hero__title">{offer.Titre__c}</h1>
+                        <div class="hero__meta">
+                            <template if:true={offer.Departement__c}>
+                                <div class="meta-item">
+                                    <lightning-icon
+                                        icon-name="standard:groups"
+                                        size="x-small">
+                                    </lightning-icon>
+                                    <span>{offer.Departement__c}</span>
+                                </div>
+                            </template>
+                            <template if:true={offer.Localisation__c}>
+                                <div class="meta-item">
+                                    <lightning-icon
+                                        icon-name="utility:location"
+                                        size="x-small">
+                                    </lightning-icon>
+                                    <span>{offer.Localisation__c}</span>
+                                </div>
+                            </template>
+                            <template if:true={offer.Deadline__c}>
+                                <div class="meta-item">
+                                    <lightning-icon
+                                        icon-name="utility:event"
+                                        size="x-small">
+                                    </lightning-icon>
+                                    <span>Date limite : {deadlineText}</span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    <div class="hero__cta">
+                        <button class="btn-postuler" onclick={openApply}>
+                            Postuler maintenant
+                        </button>
+                    </div>
+                </div>
+
+                <!-- BODY -->
+                <div class="page-body">
+
+                    <!-- Colonne principale -->
+                    <div class="col-main">
+
+                        <div class="section-card">
+                            <div class="section-card__header">
+                                <lightning-icon
+                                    icon-name="utility:description"
+                                    size="small">
+                                </lightning-icon>
+                                <h2 class="section-title">
+                                    Description du poste
+                                </h2>
+                            </div>
+                            <div class="section-card__body">
+                                <p class="section-text">
+                                    {offer.Description__c}
+                                </p>
+                            </div>
+                        </div>
+
+                        <template if:true={offer.CompetencesRequises__c}>
+                            <div class="section-card">
+                                <div class="section-card__header">
+                                    <lightning-icon
+                                        icon-name="utility:knowledge_base"
+                                        size="small">
+                                    </lightning-icon>
+                                    <h2 class="section-title">
+                                        Compétences requises
+                                    </h2>
+                                </div>
+                                <div class="section-card__body">
+                                    <p class="section-text">
+                                        {offer.CompetencesRequises__c}
+                                    </p>
+                                </div>
+                            </div>
+                        </template>
+
+                        <div class="cta-bottom">
+                            <p class="cta-text">
+                                Ce poste vous correspond ? N'attendez plus !
+                            </p>
+                            <button
+                                class="btn-postuler btn-postuler_large"
+                                onclick={openApply}>
+                                Postuler à cette offre
+                            </button>
+                        </div>
+
+                    </div>
+
+                    <!-- Colonne latérale -->
+                    <div class="col-side">
+
+                        <div class="section-card recap-card">
+                            <div class="section-card__header">
+                                <lightning-icon
+                                    icon-name="utility:info"
+                                    size="small">
+                                </lightning-icon>
+                                <h2 class="section-title">Récapitulatif</h2>
+                            </div>
+                            <div class="section-card__body">
+                                <ul class="recap-list">
+                                    <template if:true={offer.Departement__c}>
+                                        <li class="recap-item">
+                                            <span class="recap-label">
+                                                Département
+                                            </span>
+                                            <span class="recap-value">
+                                                {offer.Departement__c}
+                                            </span>
+                                        </li>
+                                    </template>
+                                    <template if:true={offer.Localisation__c}>
+                                        <li class="recap-item">
+                                            <span class="recap-label">
+                                                Localisation
+                                            </span>
+                                            <span class="recap-value">
+                                                {offer.Localisation__c}
+                                            </span>
+                                        </li>
+                                    </template>
+                                    <template if:true={offer.Statut__c}>
+                                        <li class="recap-item">
+                                            <span class="recap-label">
+                                                Statut
+                                            </span>
+                                            <span class={statutBadgeClass}>
+                                                {offer.Statut__c}
+                                            </span>
+                                        </li>
+                                    </template>
+                                    <template if:true={offer.Deadline__c}>
+                                        <li class="recap-item">
+                                            <span class="recap-label">
+                                                Date limite
+                                            </span>
+                                            <span class="recap-value deadline">
+                                                {deadlineText}
+                                            </span>
+                                        </li>
+                                    </template>
+                                    <template if:true={offer.CreatedDate}>
+                                        <li class="recap-item">
+                                            <span class="recap-label">
+                                                Publiée le
+                                            </span>
+                                            <span class="recap-value">
+                                                {createdDateText}
+                                            </span>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </template>
+
+            <!-- INTROUVABLE -->
+            <template if:false={hasOffer}>
+                <div class="empty-state">
+                    <lightning-icon
+                        icon-name="utility:error"
+                        size="large"
+                        variant="error">
+                    </lightning-icon>
+                    <p class="empty-title">Offre introuvable</p>
+                    <p class="empty-text">
+                        Cette offre n'existe pas ou a été supprimée.
+                    </p>
+                    <button class="btn-back" onclick={handleBack}>
+                        Retour aux offres
+                    </button>
+                </div>
+            </template>
         </template>
-        <template if:true={offer.Localisation__c}>
-          <span class="pill">Localisation : {offer.Localisation__c}</span>
-        </template>
-        <template if:true={offer.Statut__c}>
-          <span class="pill">Statut : {offer.Statut__c}</span>
-        </template>
-      </div>
 
-      <!-- Description -->
-      <section class="block">
-        <div class="block__label">Description</div>
-        <div class="block__text">{offer.Description__c}</div>
-      </section>
-
-      <!-- Compétences (facultatif) -->
-      <template if:true={offer.CompetencesRequises__c}>
-        <section class="block">
-          <div class="block__label">Compétences</div>
-          <div class="block__text">{offer.CompetencesRequises__c}</div>
-        </section>
-      </template>
-
-      <!-- Actions -->
-      <footer class="detail__foot">
-        <lightning-button label="Fermer" onclick={close}></lightning-button>
-        <lightning-button class="slds-m-left_small" variant="brand" label="Postuler" onclick={openApply}></lightning-button>
-      </footer>
-    </article>
-  </div>
-
-  <!-- Sous‑overlay : Formulaire de candidature hébergé dans le détail -->
-  <template if:true={showApply}>
-    <div class="suboverlay" role="dialog" aria-modal="true" onclick={hideApply}>
-      <div class="suboverlay__card" onclick={stop}>
-        <c-sr-apply-form
-          offer-id={offerId}
-          offer-name={offer.Titre__c}
-          onclose={hideApply}
-          onapplied={applyDone}>
-        </c-sr-apply-form>
-      </div>
     </div>
-  </template>
 </template>

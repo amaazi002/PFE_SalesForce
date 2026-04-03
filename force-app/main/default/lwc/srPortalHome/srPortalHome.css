@@ -1,55 +1,69 @@
 .page {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 16px;
+    padding: 32px 24px 60px;
+    font-family: 'Salesforce Sans', Arial, sans-serif;
 }
 
-/* Grille 2 colonnes */
+.page-header {
+    margin-bottom: 32px;
+}
+
+.page-title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #1a1a2e;
+    margin: 0 0 8px;
+}
+
+.page-subtitle {
+    font-size: 1rem;
+    color: #706e6b;
+    margin: 0;
+}
+
 .grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(420px, 1fr));
-    gap: 28px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
 }
 
 @media (max-width: 920px) {
     .grid { grid-template-columns: 1fr; }
 }
 
-/* Message vide */
-.empty-msg {
-    text-align: center;
-    padding: 40px;
-    color: #666;
-    font-size: 1rem;
+@media (max-width: 640px) {
+    .page { padding: 20px 16px 40px; }
+    .page-title { font-size: 1.5rem; }
 }
 
-/* Spinner centré */
 .loading-wrapper {
     display: flex;
     justify-content: center;
-    padding: 40px;
+    align-items: center;
+    min-height: 300px;
 }
 
-/* ✅ Overlay position:fixed → ne perturbe pas la grille */
-.overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, .45);
+.empty-state {
     display: flex;
-    align-items: flex-start;
+    flex-direction: column;
+    align-items: center;
     justify-content: center;
-    padding: 28px;
-    z-index: 5000;
-    overflow-y: auto;
+    min-height: 400px;
+    gap: 16px;
+    text-align: center;
 }
 
-.overlay__card {
-    width: min(960px, 96vw);
-    margin: auto;
-    animation: pop .12s ease-out;
+.empty-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0;
 }
 
-@keyframes pop {
-    from { transform: scale(.98); opacity: .9; }
-    to   { transform: scale(1);   opacity: 1;  }
+.empty-text {
+    font-size: 1rem;
+    color: #706e6b;
+    margin: 0;
+    max-width: 400px;
 }

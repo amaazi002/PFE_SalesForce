@@ -1,0 +1,24 @@
+<template>
+    <!-- ✅ Chargement -->
+    <template if:true={isLoading}>
+        <div class="loading">
+            <lightning-spinner alternative-text="Vérification..." size="medium"></lightning-spinner>
+        </div>
+    </template>
+
+    <!-- ✅ Accès refusé -->
+    <template if:true={accessDenied}>
+        <div class="denied">
+            <div class="denied-icon">🔒</div>
+            <h2 class="denied-title">Accès refusé</h2>
+            <p class="denied-msg">
+                Vous n'avez pas les permissions nécessaires pour accéder à cette page.
+            </p>
+            <lightning-button
+                variant="brand"
+                label="Retour à l'accueil"
+                onclick={goHome}>
+            </lightning-button>
+        </div>
+    </template>
+</template>

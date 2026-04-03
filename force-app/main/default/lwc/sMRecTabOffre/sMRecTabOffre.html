@@ -1,5 +1,7 @@
 <template>
     <div class="slds-card">
+
+        <!-- Header -->
         <div class="slds-card__header slds-grid slds-p-around_small">
             <header class="slds-media slds-media_center slds-has-flexi-truncate">
                 <div class="slds-media__body">
@@ -7,36 +9,55 @@
                 </div>
             </header>
         </div>
-        <div class="slds-p-horizontal_small slds-p-bottom_small">
-                <template if:true={hasRows}>
-                    <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_fixed-layout">
-                        <thead>
-                            <tr class="slds-line-height_reset">
-                                <th scope="col"><div class="slds-truncate">Titre</div></th>
-                                <th scope="col"><div class="slds-truncate">Date d’ouverture</div></th>
-                                <th scope="col"><div class="slds-truncate">Date de fermeture</div></th>
-                                <th scope="col"><div class="slds-truncate">Statut</div></th>
-                                <th scope="col"><div class="slds-truncate">Type</div></th>
-                                <th scope="col" style="width:300px"><div class="slds-truncate">Actions</div></th>
-                            </tr>
-                        </thead>
 
-                        <tbody>
-                            <template for:each={rows} for:item="row">
-                                <tr key={row.Id}>
-                                    <td class={row.rowClass}>
-                                        <button class="slds-button slds-button_reset slds-text-link"
-                                                title="Voir candidatures"
-                                                data-id={row.Id}
-                                                data-title={row.Titre__c}
-                                                onclick={openCandidatures}>
-                                            {row.Titre__c}
-                                        </button>
-                                    </td>
-                                    <td class={row.rowClass}>{row.createdDateFmt}</td>
-                                    <td class={row.rowClass}>{row.deadlineFmt}</td>
-                                    <td class={row.rowClass}>{row.Statut__c}</td>
-                                    <td class={row.rowClass}>{row.typeLabel}</td>
+        <!-- Body -->
+        <div class="slds-p-horizontal_small slds-p-bottom_small">
+            <template if:true={hasRows}>
+                <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_fixed-layout">
+                    <thead>
+                        <tr class="slds-line-height_reset">
+                            <th scope="col">
+                                <div class="slds-truncate">Titre</div>
+                            </th>
+                            <th scope="col">
+                                <div class="slds-truncate">Date d'ouverture</div>
+                            </th>
+                            <th scope="col">
+                                <div class="slds-truncate">Date de fermeture</div>
+                            </th>
+                            <th scope="col">
+                                <div class="slds-truncate">Statut</div>
+                            </th>
+                            <th scope="col">
+                                <div class="slds-truncate">Type</div>
+                            </th>
+                            <!-- ✅ Colonne Actions cachée pour Guest -->
+                            <template if:false={isGuest}>
+                                <th scope="col" style="width:200px">
+                                    <div class="slds-truncate">Actions</div>
+                                </th>
+                            </template>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template for:each={rows} for:item="row">
+                            <tr key={row.Id}>
+                                <td class={row.rowClass}>
+                                    <button
+                                        class="slds-button slds-button_reset slds-text-link"
+                                        title="Voir candidatures"
+                                        data-id={row.Id}
+                                        data-title={row.Titre__c}
+                                        onclick={openCandidatures}>
+                                        {row.Titre__c}
+                                    </button>
+                                </td>
+                                <td class={row.rowClass}>{row.createdDateFmt}</td>
+                                <td class={row.rowClass}>{row.deadlineFmt}</td>
+                                <td class={row.rowClass}>{row.Statut__c}</td>
+                                <td class={row.rowClass}>{row.typeLabel}</td>
+                                <!-- ✅ Bouton Modifier caché pour Guest -->
+                                <template if:false={isGuest}>
                                     <td>
                                         <div class="slds-button_group" role="group">
                                             <lightning-button
@@ -47,133 +68,223 @@
                                             </lightning-button>
                                         </div>
                                     </td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </template>
-
-                <template if:false={hasRows}>
-                    <div class="slds-p-around_medium slds-text-color_weak">
-                        Aucune offre trouvée.
-                    </div>
-                </template>
-            </div>
-        </div>
-
-        <!-- Modale Candidatures -->
-        <template if:true={isModalOpen}>
-            <section role="dialog" tabindex="-1" aria-modal="true" class="slds-modal slds-fade-in-open slds-modal_large cand-modal">
-                <div class="slds-modal__container">
-                    <header class="slds-modal__header">
-                        <h2 class="slds-text-heading_medium">Candidatures — {modalOfferTitle}</h2>
-                        <button class="slds-button slds-button_icon slds-modal__close" title="Fermer" onclick={closeModal}>
-                            <lightning-icon icon-name="utility:close" alternative-text="Fermer" size="medium"></lightning-icon>
-                        </button>
-                    </header>
-
-                    <div class="slds-modal__content slds-p-around_medium">
-                        <template if:true={hasCandidatures}>
-                            <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_fixed-layout">
-                                <thead>
-                                    <tr class="slds-line-height_reset">
-                                        <!-- <th><div class="slds-truncate">Candidat</div></th> -->
-                                        <th style="width:190px"><div class="slds-truncate">Nom</div></th>
-                                        <th style="width:190px"><div class="slds-truncate">Statut</div></th>
-                                        <th style="width:190px"><div class="slds-truncate">Date de candidature</div></th>
-                                        <th style="width:190px"><div class="slds-truncate">Score</div></th>
-                                        <th style="width:190px"><div class="slds-truncate">CV</div></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <template for:each={candidatures} for:item="cand">
-                                        <tr key={cand.Id}>
-                                            <td><div class="slds-truncate" title={cand.candidateName}>{cand.candidateName}</div></td>
-                                            <td><div class="slds-truncate" title={cand.Statut__c}>{cand.Statut__c}</div></td>
-                                            <td><div class="slds-truncate" title={cand.DateDepot__c}>{cand.DateDepot__c}</div></td>
-                                            <td><div class="slds-truncate" title={cand.Score__c}>{cand.Score__c}</div></td>
-                                            <td>
-                                                <lightning-formatted-url
-                                                    value={cand.cvUrl}
-                                                    label={cand.cvLabel}
-                                                    target="_blank">
-                                                </lightning-formatted-url>
-                                            </td>
-                                        </tr>
-                                    </template>
-                                </tbody>
-                            </table>
+                                </template>
+                            </tr>
                         </template>
-                        <template if:false={hasCandidatures}>
-                            <div class="slds-p-around_medium slds-text-color_weak">
-                                Aucune candidature pour cette offre.
-                            </div>
-                        </template>
-                    </div>
+                    </tbody>
+                </table>
+            </template>
+
+            <template if:false={hasRows}>
+                <div class="slds-p-around_medium slds-text-color_weak">
+                    Aucune offre trouvée.
                 </div>
-            </section>
-            <div class="slds-backdrop slds-backdrop_open"></div>
-        </template>
-
-<!-- Modale d'édition -->
-<template if:true={isEditModalOpen}>
-    <section role="dialog" tabindex="-1" aria-modal="true" class="slds-modal slds-fade-in-open">
-        <div class="slds-modal__container">
-            <header class="slds-modal__header">
-                <h2 class="slds-text-heading_medium">Modifier — {editOfferTitle}</h2>
-                <button class="slds-button slds-button_icon slds-modal__close" title="Fermer" onclick={closeEditModal}>
-                    <lightning-icon icon-name="utility:close" alternative-text="Fermer" size="small"></lightning-icon>
-                </button>
-            </header>
-
-            <div class="slds-modal__content slds-p-around_medium">
-                <lightning-record-edit-form
-                    object-api-name="Offre__c"
-                    record-id={editRecordId}
-                    onsubmit={handleEditSubmit}
-                    onsuccess={handleEditSuccess}
-                    onerror={handleEditError}
-                >
-                    <lightning-messages></lightning-messages>
-
-                    <div class="slds-grid slds-wrap slds-gutters">
-                        <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
-                            <lightning-input-field field-name="Titre__c" required></lightning-input-field>
-                        </div>
-                        <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
-                            <lightning-input-field field-name="Departement__c" required></lightning-input-field>
-                        </div>
-                        <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
-                            <lightning-input-field field-name="Localisation__c" required></lightning-input-field>
-                        </div>
-                        <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
-                            <lightning-input-field field-name="Deadline__c" required></lightning-input-field>
-                        </div>
-                        <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
-                            <lightning-input-field field-name="Statut__c" required onchange={onStatusChange}></lightning-input-field>
-                        </div>
-                        <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
-                            <lightning-input-field field-name="TypeOffre__c" required onchange={onStatusChange}></lightning-input-field>
-                        </div>
-                        <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
-                            <lightning-input-field field-name="Description__c" required></lightning-input-field>
-                        </div>
-                        <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
-                            <lightning-input-field field-name="CompetencesRequises__c" required></lightning-input-field>
-                        </div>
-                        <template if:false={isEditClosed}>
-                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
-                                <lightning-input-field field-name="Visible_aux_candidat__c" required></lightning-input-field>
-                            </div>
-                        </template>
-                    </div>
-                    <div class="slds-modal__footer">
-                        <lightning-button label="Annuler" onclick={closeEditModal}></lightning-button>
-                        <lightning-button class="slds-m-left_small" variant="brand" label="Enregistrer" type="submit" disabled={saveDisabled}></lightning-button>
-                    </div>
-                </lightning-record-edit-form>
-            </div>
+            </template>
         </div>
-    </section>
-    <div class="slds-backdrop slds-backdrop_open"></div>
+
+    </div>
+
+    <!-- Modale Candidatures -->
+    <template if:true={isModalOpen}>
+        <section role="dialog" tabindex="-1" aria-modal="true"
+                 class="slds-modal slds-fade-in-open slds-modal_large">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <h2 class="slds-text-heading_medium">
+                        Candidatures — {modalOfferTitle}
+                    </h2>
+                    <button
+                        class="slds-button slds-button_icon slds-modal__close"
+                        title="Fermer"
+                        onclick={closeModal}>
+                        <lightning-icon
+                            icon-name="utility:close"
+                            alternative-text="Fermer"
+                            size="medium">
+                        </lightning-icon>
+                    </button>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <template if:true={hasCandidatures}>
+                        <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_fixed-layout">
+                            <thead>
+                                <tr class="slds-line-height_reset">
+                                    <th style="width:190px">
+                                        <div class="slds-truncate">Nom</div>
+                                    </th>
+                                    <th style="width:190px">
+                                        <div class="slds-truncate">Statut</div>
+                                    </th>
+                                    <th style="width:190px">
+                                        <div class="slds-truncate">Date de candidature</div>
+                                    </th>
+                                    <th style="width:190px">
+                                        <div class="slds-truncate">Score</div>
+                                    </th>
+                                    <th style="width:190px">
+                                        <div class="slds-truncate">CV</div>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template for:each={candidatures} for:item="cand">
+                                    <tr key={cand.Id}>
+                                        <td>
+                                            <div class="slds-truncate"
+                                                 title={cand.candidateName}>
+                                                {cand.candidateName}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="slds-truncate"
+                                                 title={cand.Statut__c}>
+                                                {cand.Statut__c}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="slds-truncate"
+                                                 title={cand.DateDepot__c}>
+                                                {cand.DateDepot__c}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="slds-truncate"
+                                                 title={cand.Score_Matching__c}>
+                                                {cand.Score_Matching__c}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <lightning-formatted-url
+                                                value={cand.cvUrl}
+                                                label={cand.cvLabel}
+                                                target="_blank">
+                                            </lightning-formatted-url>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </template>
+                    <template if:false={hasCandidatures}>
+                        <div class="slds-p-around_medium slds-text-color_weak">
+                            Aucune candidature pour cette offre.
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+    <!-- Modale Édition -->
+    <template if:true={isEditModalOpen}>
+        <section role="dialog" tabindex="-1" aria-modal="true"
+                 class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <h2 class="slds-text-heading_medium">
+                        Modifier — {editOfferTitle}
+                    </h2>
+                    <button
+                        class="slds-button slds-button_icon slds-modal__close"
+                        title="Fermer"
+                        onclick={closeEditModal}>
+                        <lightning-icon
+                            icon-name="utility:close"
+                            alternative-text="Fermer"
+                            size="small">
+                        </lightning-icon>
+                    </button>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <lightning-record-edit-form
+                        object-api-name="Offre__c"
+                        record-id={editRecordId}
+                        onsubmit={handleEditSubmit}
+                        onsuccess={handleEditSuccess}
+                        onerror={handleEditError}>
+
+                        <lightning-messages></lightning-messages>
+
+                        <div class="slds-grid slds-wrap slds-gutters">
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                                <lightning-input-field
+                                    field-name="Titre__c"
+                                    required>
+                                </lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                                <lightning-input-field
+                                    field-name="Departement__c"
+                                    required>
+                                </lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                                <lightning-input-field
+                                    field-name="Localisation__c"
+                                    required>
+                                </lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                                <lightning-input-field
+                                    field-name="Deadline__c"
+                                    required>
+                                </lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                                <lightning-input-field
+                                    field-name="Statut__c"
+                                    required
+                                    onchange={onStatusChange}>
+                                </lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                                <lightning-input-field
+                                    field-name="TypeOffre__c"
+                                    required
+                                    onchange={onStatusChange}>
+                                </lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                                <lightning-input-field
+                                    field-name="Description__c"
+                                    required>
+                                </lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                                <lightning-input-field
+                                    field-name="CompetencesRequises__c"
+                                    required>
+                                </lightning-input-field>
+                            </div>
+                            <template if:false={isEditClosed}>
+                                <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                                    <lightning-input-field
+                                        field-name="Visible_aux_candidat__c"
+                                        required>
+                                    </lightning-input-field>
+                                </div>
+                            </template>
+                        </div>
+
+                        <div class="slds-modal__footer">
+                            <lightning-button
+                                label="Annuler"
+                                onclick={closeEditModal}>
+                            </lightning-button>
+                            <lightning-button
+                                class="slds-m-left_small"
+                                variant="brand"
+                                label="Enregistrer"
+                                type="submit"
+                                disabled={saveDisabled}>
+                            </lightning-button>
+                        </div>
+                    </lightning-record-edit-form>
+                </div>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
 </template>

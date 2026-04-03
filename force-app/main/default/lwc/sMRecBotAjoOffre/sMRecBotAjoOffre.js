@@ -2,8 +2,8 @@ import { LightningElement } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
 export default class SMRecBotAjoOffre extends LightningElement {
+    
     isOpen = false;
-
     today;        
     deadline;     
 
@@ -21,13 +21,14 @@ export default class SMRecBotAjoOffre extends LightningElement {
     handleDate(event) {
         this.deadline = event.target.value;
     }
+
     handleSubmit(event) {
         event.preventDefault();
         const fields = event.detail.fields;
         if (this.deadline && this.deadline < this.today) {
             this.dispatchEvent(new ShowToastEvent({
                 title: 'Date invalide',
-                message: 'La deadline doit être aujourd’hui ou plus tard.',
+                message: "La deadline doit être aujourd'hui ou plus tard.",
                 variant: 'error'
             }));
             return;

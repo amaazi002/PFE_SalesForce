@@ -5,9 +5,6 @@ public with sharing class SR_OfferController {
         public List<Offre__c> fetchPublicOffers(Integer limitSize) {
             Integer l = (limitSize != null && limitSize > 0 && limitSize <= 500)
                 ? limitSize : 100;
-
-            // ✅ Filtre simplifié : uniquement Statut__c
-            // Visible_aux_candidat__c retiré → offres visibles connecté ET déconnecté
             return [
                 SELECT Id,
                        Titre__c,
@@ -28,7 +25,7 @@ public with sharing class SR_OfferController {
         }
 
         public Offre__c fetchOfferById(Id offreId) {
-            return [
+            List<Offre__c> offers = [
                 SELECT Id,
                        Titre__c,
                        Description__c,
@@ -42,48 +39,78 @@ public with sharing class SR_OfferController {
                 WHERE  Id = :offreId
                 LIMIT  1
             ];
+            // ✅ Vérifier si la liste est vide
+            if (offers.isEmpty()) return null;
+            return offers[0];
         }
     }
 
     @AuraEnabled(cacheable=false)
     public static List<Offre__c> getPublicOffers(Integer limitSize) {
-        return new PublicOfferAccess().fetchPublicOffers(limitSize);
+        try {
+            return new PublicOfferAccess().fetchPublicOffers(limitSize);
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
     }
 
     @AuraEnabled(cacheable=false)
     public static Offre__c getOfferById(Id offreId) {
         if (offreId == null) throw new AuraHandledException('offreId requis');
-        return new PublicOfferAccess().fetchOfferById(offreId);
+        try {
+            return new PublicOfferAccess().fetchOfferById(offreId);
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
     }
 
     @AuraEnabled(cacheable=false)
     public static Map<String, String> getCurrentUserProfile() {
         Map<String,String> out = new Map<String,String>();
         Boolean isGuest = true;
+
         try {
-            User u0 = [
+            // ✅ List au lieu de SObject direct
+            List<User> users = [
                 SELECT Id, UserType
                 FROM   User
                 WHERE  Id = :UserInfo.getUserId()
+                LIMIT  1
             ];
-            isGuest = (u0.UserType == 'Guest');
-        } catch (Exception e) { isGuest = true; }
+
+            if (!users.isEmpty()) {
+                isGuest = (users[0].UserType == 'Guest');
+            }
+
+        } catch (Exception e) {
+            System.debug('Error checking user type: ' + e.getMessage());
+            isGuest = true;
+        }
 
         out.put('isGuest', String.valueOf(isGuest));
 
         if (!isGuest) {
             try {
-                User u = [
+                List<User> users = [
                     SELECT Id, FirstName, LastName, Email, ContactId
                     FROM   User
                     WHERE  Id = :UserInfo.getUserId()
+                    LIMIT  1
                 ];
-                if (u.FirstName != null) out.put('firstName', u.FirstName);
-                if (u.LastName  != null) out.put('lastName',  u.LastName);
-                if (u.Email     != null) out.put('email',     u.Email);
-                if (u.ContactId != null) out.put('contactId', String.valueOf(u.ContactId));
-            } catch (Exception e) {}
+
+                if (!users.isEmpty()) {
+                    User u = users[0];
+                    if (u.FirstName != null) out.put('firstName', u.FirstName);
+                    if (u.LastName  != null) out.put('lastName',  u.LastName);
+                    if (u.Email     != null) out.put('email',     u.Email);
+                    if (u.ContactId != null) out.put('contactId', String.valueOf(u.ContactId));
+                }
+
+            } catch (Exception e) {
+                System.debug('Error getting user details: ' + e.getMessage());
+            }
         }
+
         return out;
     }
 }

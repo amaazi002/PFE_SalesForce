@@ -1,32 +1,44 @@
-.sr-header-auth {
-  background-color: #FFFFFF;
-  border-bottom: 1px solid #E0E0E0;
-  padding: 1rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.hero {
+  background-color: #D04A02;
+  border-radius: 20px;
+    padding: 4px 4px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 5px;
+    box-shadow: 0 12px 40px rgba(208,74,2,0.3);
+    position: relative;
+    overflow: hidden;
 }
 
-.sr-header-auth .logo-placeholder {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #D04A02;
+/* Logo */
+.logo-text {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 0.5px;
 }
 
-.sr-header-auth .nav-links a {
-  color: #4A4A4A;
-  text-decoration: none;
-  margin: 0 1rem;
-  font-weight: 500;
-  transition: color 0.3s ease;
+.person{
+  margin-bottom: 50px;
 }
 
-.sr-header-auth .nav-links a:hover,
-.sr-header-auth .nav-links a.active {
-  color: #D04A02;
+.logo-accent {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #FFD580;
+    margin-left: 6px;
 }
 
-.sr-header-auth .auth-section {
-  display: flex;
-  align-items: center;
+/* Spacer */
+.spacer { flex: 1; }
+
+/* Actions */
+.actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }

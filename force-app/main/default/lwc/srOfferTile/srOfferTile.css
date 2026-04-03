@@ -1,48 +1,61 @@
-/* force-app/main/default/lwc/srOfferTile/srOfferTile.css */
-
-/* ✅ cursor:pointer sur toute la carte */
 .offer-card {
-    background: #F7F6F6;
-    border: 1px solid #bfbfbf;
-    border-radius: 12px;
-    padding: 18px 20px;
-    box-shadow: 0 2px 6px rgba(0,0,0,.06);
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 14px;
+    padding: 20px 22px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.07);
     display: flex;
     flex-direction: column;
     cursor: pointer;
     transition: box-shadow .2s ease, transform .15s ease;
+    position: relative;
+    overflow: hidden;
 }
 
-/* ✅ Effet hover sur la carte */
+.offer-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(135deg, #1a1a2e, #D04A02);
+    border-radius: 14px 0 0 14px;
+}
+
 .offer-card:hover {
-    box-shadow: 0 6px 18px rgba(0,0,0,.13);
-    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(208,74,2,.15);
+    transform: translateY(-3px);
 }
 
 .offer-card__head {
     display: flex;
     justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 10px;
-    gap: 8px;
+    align-items: flex-start;
+    margin-bottom: 14px;
+    gap: 12px;
 }
 
 .offer-card__title {
-    font-size: 1.35rem;
+    font-size: 1.2rem;
     font-weight: 700;
-    line-height: 1.6rem;
+    color: #1a1a2e;
+    line-height: 1.4;
+    margin: 0;
 }
 
-/* Date limite normale */
 .offer-card__deadline {
-    color: #666;
-    font-size: .85rem;
+    color: #706e6b;
+    font-size: .82rem;
     white-space: nowrap;
+    background: #f4f6f9;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    flex-shrink: 0;
 }
 
-/* Date limite dépassée → rouge */
 .offer-card__deadline--expired {
     color: #c23934;
+    background: #fdf0ef;
     font-weight: 600;
 }
 
@@ -51,22 +64,46 @@
 }
 
 .offer-card__label {
+    font-size: 0.8rem;
     font-weight: 700;
+    color: #706e6b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     margin-bottom: 4px;
     display: flex;
     align-items: center;
+    gap: 4px;
 }
 
 .offer-card__text {
     margin: 0;
-    line-height: 1.45rem;
-    color: #222;
+    line-height: 1.5;
+    color: #3e3e3c;
+    font-size: 0.95rem;
 }
 
-/* ✅ Description limitée à 3 lignes avec "..." */
 .offer-card__text--clamp {
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+}
+
+.offer-card__footer {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.offer-card__cta {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #D04A02;
+    transition: gap 0.2s;
+}
+
+.offer-card:hover .offer-card__cta {
+    text-decoration: underline;
 }

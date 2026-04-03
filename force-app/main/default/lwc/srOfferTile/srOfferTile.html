@@ -1,42 +1,52 @@
-<!-- force-app/main/default/lwc/srOfferTile/srOfferTile.html -->
 <template>
-  <!-- ✅ Toute la carte est cliquable + curseur pointer -->
-  <article class="offer-card" onclick={view}>
+    <article class="offer-card" onclick={view}>
 
-    <!-- ── En-tête : Titre + Date limite ── -->
-    <header class="offer-card__head">
-      <h2 class="offer-card__title">{titreText}</h2>
-      <div class={deadlineClass}>{deadlineText}</div>
-    </header>
+        <header class="offer-card__head">
+            <h2 class="offer-card__title">{titreText}</h2>
+            <div class={deadlineClass}>{deadlineText}</div>
+        </header>
 
-    <!-- ── Description (3 lignes max) ── -->
-    <section class="offer-card__section">
-      <div class="offer-card__label">
-        <lightning-icon icon-name="utility:description" size="xx-small" class="slds-m-right_xx-small"></lightning-icon>
-        Description
-      </div>
-      <p class="offer-card__text offer-card__text--clamp">{descriptionText}</p>
-    </section>
+        <section class="offer-card__section">
+            <div class="offer-card__label">
+                <lightning-icon
+                    icon-name="utility:description"
+                    size="xx-small"
+                    class="slds-m-right_xx-small">
+                </lightning-icon>
+                Description
+            </div>
+            <p class="offer-card__text offer-card__text--clamp">
+                {descriptionText}
+            </p>
+        </section>
 
-    <!-- ── Département ── -->
-    <section class="offer-card__section">
-      <div class="offer-card__label">
-        <lightning-icon icon-name="utility:office365" size="xx-small" class="slds-m-right_xx-small"></lightning-icon>
-        Département
-      </div>
-      <p class="offer-card__text">{departementText}</p>
-    </section>
+        <section class="offer-card__section">
+            <div class="offer-card__label">
+                <lightning-icon
+                    icon-name="utility:office365"
+                    size="xx-small"
+                    class="slds-m-right_xx-small">
+                </lightning-icon>
+                Département
+            </div>
+            <p class="offer-card__text">{departementText}</p>
+        </section>
 
-    <!-- ── Localisation ── -->
-    <section class="offer-card__section">
-      <div class="offer-card__label">
-        <lightning-icon icon-name="utility:location" size="xx-small" class="slds-m-right_xx-small"></lightning-icon>
-        Localisation
-      </div>
-      <p class="offer-card__text">{localisationText}</p>
-    </section>
+        <section class="offer-card__section">
+            <div class="offer-card__label">
+                <lightning-icon
+                    icon-name="utility:location"
+                    size="xx-small"
+                    class="slds-m-right_xx-small">
+                </lightning-icon>
+                Localisation
+            </div>
+            <p class="offer-card__text">{localisationText}</p>
+        </section>
 
-    <!-- ✅ Footer supprimé (bouton "Voir l'offre" retiré) -->
+        <div class="offer-card__footer">
+            <span class="offer-card__cta">Voir le détail →</span>
+        </div>
 
-  </article>
+    </article>
 </template>

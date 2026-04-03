@@ -1,0 +1,30 @@
+.loading {
+    display: flex;
+    justify-content: center;
+    padding: 40px;
+}
+
+.denied {
+    text-align: center;
+    padding: 60px 20px;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.denied-icon {
+    font-size: 4rem;
+    margin-bottom: 16px;
+}
+
+.denied-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #c23934;
+    margin-bottom: 12px;
+}
+
+.denied-msg {
+    color: #666;
+    font-size: 1rem;
+    margin-bottom: 24px;
+}

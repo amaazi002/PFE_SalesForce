@@ -1,37 +1,28 @@
-public without sharing class SR_UserProfileController {
+public with sharing class SR_UserProfileController {
 
-    // ─── Récupérer le profil de l'utilisateur connecté ───────────────
     @AuraEnabled(cacheable=true)
     public static Map<String, String> getUserProfile() {
         Map<String, String> out = new Map<String, String>();
         try {
             User u = [
-                SELECT Id, FirstName, LastName, Email, ContactId
+                SELECT Id, FirstName, LastName, Email,
+                       ContactId, Profile.Name
                 FROM   User
                 WHERE  Id = :UserInfo.getUserId()
             ];
-            out.put('firstName', u.FirstName != null ? u.FirstName : '');
-            out.put('lastName',  u.LastName  != null ? u.LastName  : '');
-            out.put('email',     u.Email     != null ? u.Email     : '');
-            out.put('contactId', u.ContactId != null ? String.valueOf(u.ContactId) : '');
-
-            if (u.ContactId != null) {
-                Contact c = [
-                    SELECT Id, Phone
-                    FROM   Contact
-                    WHERE  Id = :u.ContactId
-                ];
-                out.put('phone', c.Phone != null ? c.Phone : '');
-            }
+            out.put('firstName',   u.FirstName    != null ? u.FirstName    : '');
+            out.put('lastName',    u.LastName     != null ? u.LastName     : '');
+            out.put('email',       u.Email        != null ? u.Email        : '');
+            out.put('contactId',   u.ContactId    != null ? String.valueOf(u.ContactId) : '');
+            out.put('profileName', u.Profile.Name != null ? u.Profile.Name : '');
         } catch (Exception e) {
             throw new AuraHandledException(
-                'Erreur lors de la récupération du profil : ' + e.getMessage()
+                'Erreur : ' + e.getMessage()
             );
         }
         return out;
     }
 
-    // ─── Mettre à jour le profil ──────────────────────────────────────
     @AuraEnabled
     public static void updateUserProfile(
         String firstName,
@@ -69,8 +60,7 @@ public without sharing class SR_UserProfileController {
         }
     }
 
-    // ─── Récupérer les candidatures de l'utilisateur ──────────────────
-    @AuraEnabled(cacheable=true)
+    @AuraEnabled(cacheable=false)
     public static List<Candidature__c> getMyCandidatures() {
         try {
             User u = [
@@ -87,10 +77,10 @@ public without sharing class SR_UserProfileController {
                        Offre__r.Localisation__c,
                        Offre__r.Departement__c,
                        Statut__c,
-                       DateDepot__c,       
+                       DateDepot__c,
                        CreatedDate
                 FROM   Candidature__c
-                WHERE  Candidat__c = :u.ContactId  
+                WHERE  Candidat__c = :u.ContactId
                 ORDER BY CreatedDate DESC
             ];
         } catch (Exception e) {
