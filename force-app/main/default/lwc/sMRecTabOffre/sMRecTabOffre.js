@@ -6,7 +6,6 @@ import { getPicklistValuesByRecordType, getObjectInfo } from 'lightning/uiObject
 import OFFRE_OBJECT from '@salesforce/schema/Offre__c';
 import userId from '@salesforce/user/Id';
 
-// ✅ Revenir à SMRecTabOffreController
 import getOffres       from '@salesforce/apex/SMRecTabOffreController.getOffres';
 import getCandidatures from '@salesforce/apex/SMRecTabOffreController.getCandidatures';
 import clotureOffre    from '@salesforce/apex/SMRecTabOffreController.clotureOffre';
@@ -48,6 +47,7 @@ export default class SMRecTabOffre extends NavigationMixin(LightningElement) {
     get hasRows() {
         return Array.isArray(this.rows) && this.rows.length > 0;
     }
+
     get hasCandidatures() {
         return Array.isArray(this.candidatures) && this.candidatures.length > 0;
     }
@@ -72,15 +72,15 @@ export default class SMRecTabOffre extends NavigationMixin(LightningElement) {
 
                 return {
                     ...r,
-                    __closed:        closed,
-                    __draft:         draft,
-                    rowClass:        closed ? 'is-closed' : (draft ? 'is-draft' : ''),
-                    closeLabel:      closed ? 'Clôturée'  : 'Clôturer',
-                    createdDateFmt:  r.CreatedDate
+                    __closed:       closed,
+                    __draft:        draft,
+                    rowClass:       closed ? 'is-closed' : (draft ? 'is-draft' : ''),
+                    closeLabel:     closed ? 'Clôturée'  : 'Clôturer',
+                    createdDateFmt: r.CreatedDate
                         ? new Date(r.CreatedDate).toLocaleString('fr-FR') : '',
-                    deadlineFmt:     r.Deadline__c
+                    deadlineFmt:    r.Deadline__c
                         ? new Date(r.Deadline__c).toLocaleDateString('fr-FR') : '',
-                    typeLabel:       r.TypeOffre__c || ''
+                    typeLabel:      r.TypeOffre__c || ''
                 };
             });
 
@@ -88,7 +88,6 @@ export default class SMRecTabOffre extends NavigationMixin(LightningElement) {
 
         } catch (e) {
             console.error('ERREUR loadOffres:', JSON.stringify(e));
-            console.error('body:', JSON.stringify(e?.body));
             this.toast('Erreur', this.err(e), 'error');
         }
     }
@@ -207,7 +206,9 @@ export default class SMRecTabOffre extends NavigationMixin(LightningElement) {
         } else if (newStatus === 'Clôturée') {
             this.applyInvisibleToFields(fields);
         }
-        if (['interne','internal'].includes(String(newType || '').toLowerCase())) {
+        if (['interne','internal'].includes(
+            String(newType || '').toLowerCase()
+        )) {
             this.applyInvisibleToFields(fields);
         }
         form.submit(fields);
@@ -233,9 +234,9 @@ export default class SMRecTabOffre extends NavigationMixin(LightningElement) {
             const draft  = (newStat === 'Brouillon');
             return {
                 ...r,
-                Titre__c:                f.Titre__c?.value          ?? r.Titre__c,
-                Departement__c:          f.Departement__c?.value    ?? r.Departement__c,
-                Localisation__c:         f.Localisation__c?.value   ?? r.Localisation__c,
+                Titre__c:                f.Titre__c?.value        ?? r.Titre__c,
+                Departement__c:          f.Departement__c?.value  ?? r.Departement__c,
+                Localisation__c:         f.Localisation__c?.value ?? r.Localisation__c,
                 Statut__c:               newStat,
                 Visible_aux_candidat__c: visField,
                 __closed:   closed,
@@ -245,13 +246,12 @@ export default class SMRecTabOffre extends NavigationMixin(LightningElement) {
             };
         });
 
+        const msg = this.savingAsDraft
+            ? 'Offre enregistrée comme brouillon.'
+            : 'Offre mise à jour.';
         this.savingAsDraft   = false;
         this.isEditModalOpen = false;
-        this.toast('Succès',
-            this.savingAsDraft
-                ? 'Offre enregistrée comme brouillon.'
-                : 'Offre mise à jour.',
-            'success');
+        this.toast('Succès', msg, 'success');
     };
 
     handleEditError = (evt) => {
@@ -301,25 +301,32 @@ export default class SMRecTabOffre extends NavigationMixin(LightningElement) {
             this.toast('Erreur', 'Id introuvable.', 'error');
             return;
         }
+
         this.modalOfferId    = offreId;
         this.modalOfferTitle = title || '';
+
         try {
             const data = await getCandidatures({ offreId });
+            console.log('candidatures:', JSON.stringify(data));
+
             this.candidatures = (data || []).map(c => {
-                const raw   = c?.CV_Public_URL__c;
-                const cvUrl = raw && !/^https?:\/\//i.test(raw)
-                    ? `https://${raw}` : raw;
+                // ✅ URL publique depuis CV_Public_URL__c
+                const cvUrl = c?.CV_Public_URL__c || null;
                 return {
                     ...c,
-                    candidateName:  c?.Candidat__r?.Name || '',
-                    createdDateFmt: c?.DateDepot__c
+                    candidateName:     c?.Candidat__r?.Name || '',
+                    createdDateFmt:    c?.DateDepot__c
                         ? new Date(c.DateDepot__c).toLocaleString('fr-FR') : '',
-                    cvUrl,
-                    cvLabel: raw ? 'Ouvrir le CV' : '—'
+                    cvUrl:   cvUrl,
+                    cvLabel: cvUrl ? 'Voir le CV' : '—',
+                    hasCv:   !!cvUrl
                 };
             });
+
             this.isModalOpen = true;
+
         } catch (e) {
+            console.error('ERREUR getCandidatures:', JSON.stringify(e));
             this.toast('Erreur', this.err(e), 'error');
         }
     }

@@ -22,34 +22,25 @@
     <!-- STEPPER -->
     <div class="stepper-wrapper">
       <div class="stepper">
-
         <div class={stepClass1}>
           <div class="step__circle">
             <template if:true={isStep1Done}>
-              <lightning-icon
-                icon-name="utility:check"
-                size="x-small">
-              </lightning-icon>
+              <lightning-icon icon-name="utility:check" size="x-small"></lightning-icon>
             </template>
             <template if:false={isStep1Done}>1</template>
           </div>
           <span class="step__label">Informations personnelles</span>
         </div>
-
         <div class="step__line"></div>
-
         <div class={stepClass2}>
           <div class="step__circle">2</div>
           <span class="step__label">Compétences</span>
         </div>
-
         <div class="step__line"></div>
-
         <div class={stepClass3}>
           <div class="step__circle">3</div>
           <span class="step__label">Confirmation</span>
         </div>
-
       </div>
     </div>
 
@@ -58,76 +49,29 @@
 
       <template if:true={isSubmitting}>
         <div class="submitting-overlay">
-          <lightning-spinner
-            alternative-text="Traitement..."
-            size="medium">
-          </lightning-spinner>
+          <lightning-spinner alternative-text="Traitement..." size="medium"></lightning-spinner>
           <p class="submitting-text">Envoi en cours...</p>
         </div>
       </template>
 
-      <!-- ═══════════════════════════════════════
-           ÉTAPE 1 : Informations personnelles
-      ════════════════════════════════════════ -->
+      <!-- ═══ ÉTAPE 1 ═══ -->
       <template if:true={isStep1}>
 
         <!-- Identité -->
         <div class="section-card">
           <div class="section-card__header">
-            <lightning-icon
-              icon-name="standard:contact"
-              size="small">
-            </lightning-icon>
+            <lightning-icon icon-name="standard:contact" size="small"></lightning-icon>
             <h2 class="section-title">Identité</h2>
           </div>
           <div class="section-card__body">
             <div class="form-grid">
-              <lightning-input
-                type="text"
-                label="Prénom"
-                value={firstName}
-                onchange={onFirst}
-                required>
-              </lightning-input>
-              <lightning-input
-                type="text"
-                label="Nom"
-                value={lastName}
-                onchange={onLast}
-                required>
-              </lightning-input>
-              <lightning-input
-                type="email"
-                label="Email"
-                value={email}
-                onchange={onEmail}
-                required>
-              </lightning-input>
-              <lightning-input
-                type="tel"
-                label="Téléphone"
-                value={Phone}
-                onchange={onTelephone}>
-              </lightning-input>
-              <lightning-input
-                type="date"
-                label="Date de naissance"
-                value={dateNaissance}
-                onchange={onDateNaissance}>
-              </lightning-input>
-              <lightning-combobox
-                label="Sexe"
-                value={sexe}
-                options={genderOptions}
-                onchange={onSexe}>
-              </lightning-combobox>
-              <lightning-combobox
-                label="Situation familiale"
-                value={situationFamiliale}
-                options={situationOptions}
-                onchange={onSituationFamiliale}
-                class="full-width">
-              </lightning-combobox>
+              <lightning-input type="text"  label="Prénom"             value={firstName}          onchange={onFirst}              required></lightning-input>
+              <lightning-input type="text"  label="Nom"                value={lastName}           onchange={onLast}               required></lightning-input>
+              <lightning-input type="email" label="Email"              value={email}              onchange={onEmail}              required></lightning-input>
+              <lightning-input type="tel"   label="Téléphone"          value={telephone}          onchange={onTelephone}                  ></lightning-input>
+              <lightning-input type="date"  label="Date de naissance"  value={dateNaissance}      onchange={onDateNaissance}              ></lightning-input>
+              <lightning-combobox           label="Sexe"               value={sexe}               options={genderOptions}         onchange={onSexe}></lightning-combobox>
+              <lightning-combobox           label="Situation familiale" value={situationFamiliale} options={situationOptions}      onchange={onSituationFamiliale} class="full-width"></lightning-combobox>
             </div>
           </div>
         </div>
@@ -135,10 +79,7 @@
         <!-- Upload CV -->
         <div class="section-card">
           <div class="section-card__header">
-            <lightning-icon
-              icon-name="utility:attach"
-              size="small">
-            </lightning-icon>
+            <lightning-icon icon-name="utility:attach" size="small"></lightning-icon>
             <h2 class="section-title">Déposer votre CV</h2>
           </div>
           <div class="section-card__body">
@@ -156,16 +97,29 @@
                   class="file-input"
                   onchange={onFileChange}>
               </label>
+
               <template if:true={fileName}>
                 <div class="file-selected">
-                  <lightning-icon
-                    icon-name="doctype:pdf"
-                    size="small">
-                  </lightning-icon>
+                  <lightning-icon icon-name="doctype:pdf" size="small"></lightning-icon>
                   <span class="file-selected__name">{fileName}</span>
                 </div>
               </template>
             </div>
+
+            <!-- ✅ Message parsing CV -->
+            <template if:true={parsingCv}>
+              <div class="status-msg status-msg_loading">
+                <lightning-spinner size="small"></lightning-spinner>
+                <span>Analyse du CV en cours... Veuillez patienter</span>
+              </div>
+            </template>
+
+            <template if:true={cvParsed}>
+              <div class="status-msg status-msg_success">
+                <lightning-icon icon-name="utility:success" size="x-small"></lightning-icon>
+                <span>CV analysé ! Les champs ont été remplis automatiquement.</span>
+              </div>
+            </template>
 
             <template if:true={uploadingCv}>
               <div class="status-msg status-msg_loading">
@@ -176,10 +130,7 @@
 
             <template if:true={cvUploaded}>
               <div class="status-msg status-msg_success">
-                <lightning-icon
-                  icon-name="utility:success"
-                  size="x-small">
-                </lightning-icon>
+                <lightning-icon icon-name="utility:success" size="x-small"></lightning-icon>
                 <span>CV déposé avec succès !</span>
               </div>
             </template>
@@ -190,38 +141,40 @@
         <!-- Erreur -->
         <template if:true={lastError}>
           <div class="alert-error">
-            <lightning-icon
-              icon-name="utility:error"
-              size="x-small">
-            </lightning-icon>
+            <lightning-icon icon-name="utility:error" size="x-small"></lightning-icon>
             <span>{lastError}</span>
           </div>
         </template>
 
         <!-- Actions -->
         <div class="form-actions">
-          <button class="btn-secondary" onclick={goBack}>
-            Annuler
-          </button>
-          <button class="btn-primary" onclick={goStep2}>
-            Suivant →
+          <button class="btn-secondary" onclick={goBack}>Annuler</button>
+          <button class="btn-primary"   onclick={goStep2} disabled={parsingCv}>
+            <template if:true={parsingCv}>Analyse en cours...</template>
+            <template if:false={parsingCv}>Suivant →</template>
           </button>
         </div>
 
       </template>
 
-      <!-- ═══════════════════════════════════════
-           ÉTAPE 2 : Compétences & Formation
-      ════════════════════════════════════════ -->
+      <!-- ═══ ÉTAPE 2 ═══ -->
       <template if:true={isStep2}>
+
+        <!-- ✅ Message si CV analysé -->
+        <template if:true={cvParsed}>
+          <div class="cv-parsed-banner">
+            <lightning-icon icon-name="utility:einstein" size="small"></lightning-icon>
+            <span>
+              ✨ Les champs ont été remplis automatiquement à partir de votre CV.
+              Vérifiez et modifiez si nécessaire.
+            </span>
+          </div>
+        </template>
 
         <!-- Compétences -->
         <div class="section-card">
           <div class="section-card__header">
-            <lightning-icon
-              icon-name="utility:knowledge_base"
-              size="small">
-            </lightning-icon>
+            <lightning-icon icon-name="utility:knowledge_base" size="small"></lightning-icon>
             <h2 class="section-title">Compétences &amp; Expérience</h2>
           </div>
           <div class="section-card__body">
@@ -231,8 +184,7 @@
                 label="Années d'expérience"
                 value={anneesExperience}
                 onchange={onAnneesExperience}
-                min="0"
-                step="1"
+                min="0" step="1"
                 class="full-width">
               </lightning-input>
               <lightning-textarea
@@ -263,10 +215,7 @@
         <!-- Formation -->
         <div class="section-card">
           <div class="section-card__header">
-            <lightning-icon
-              icon-name="standard:education"
-              size="small">
-            </lightning-icon>
+            <lightning-icon icon-name="standard:education" size="small"></lightning-icon>
             <h2 class="section-title">Formation</h2>
           </div>
           <div class="section-card__body">
@@ -295,9 +244,7 @@
                 label="Année d'obtention"
                 value={anneeObtention}
                 onchange={onAnneeObtention}
-                min="1950"
-                max="2100"
-                step="1">
+                min="1950" max="2100" step="1">
               </lightning-input>
             </div>
           </div>
@@ -306,55 +253,39 @@
         <!-- Erreur -->
         <template if:true={lastError}>
           <div class="alert-error">
-            <lightning-icon
-              icon-name="utility:error"
-              size="x-small">
-            </lightning-icon>
+            <lightning-icon icon-name="utility:error" size="x-small"></lightning-icon>
             <span>{lastError}</span>
           </div>
         </template>
 
         <!-- Actions -->
         <div class="form-actions">
-          <button class="btn-secondary" onclick={goStep1}>
-            ← Retour
-          </button>
-          <button
-            class="btn-primary"
-            onclick={submit}
-            disabled={isSubmitting}>
+          <button class="btn-secondary" onclick={goStep1}>← Retour</button>
+          <button class="btn-primary" onclick={submit} disabled={isSubmitting}>
             Soumettre ma candidature
           </button>
         </div>
 
       </template>
 
-      <!-- ═══════════════════════════════════════
-           ÉTAPE 3 : Confirmation
-      ════════════════════════════════════════ -->
+      <!-- ═══ ÉTAPE 3 ═══ -->
       <template if:true={isStep3}>
         <div class="confirmation">
           <div class="confirmation__icon">🎉</div>
           <h2 class="confirmation__title">Candidature envoyée !</h2>
           <p class="confirmation__msg">
             Merci <strong>{firstName} {lastName}</strong>,
-            votre candidature pour l'offre
-            <strong>{offerName}</strong>
+            votre candidature pour <strong>{offerName}</strong>
             a bien été enregistrée.
           </p>
           <template if:true={cvUploaded}>
             <div class="confirmation__cv">
-              <lightning-icon
-                icon-name="utility:check"
-                size="x-small">
-              </lightning-icon>
+              <lightning-icon icon-name="utility:check" size="x-small"></lightning-icon>
               Votre CV a bien été déposé.
             </div>
           </template>
           <div class="form-actions form-actions_center">
-            <button class="btn-primary" onclick={goBack}>
-              Retour à l'accueil
-            </button>
+            <button class="btn-primary" onclick={goBack}>Retour à l'accueil</button>
           </div>
         </div>
       </template>

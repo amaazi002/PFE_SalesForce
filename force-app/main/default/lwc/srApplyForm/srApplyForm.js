@@ -1,10 +1,14 @@
 import { LightningElement, track } from 'lwc';
-import { NavigationMixin }   from 'lightning/navigation';
+import { NavigationMixin }         from 'lightning/navigation';
+import { ShowToastEvent }          from 'lightning/platformShowToastEvent';
+
 import getProfile        from '@salesforce/apex/SR_OfferController.getCurrentUserProfile';
 import getOffer          from '@salesforce/apex/SR_OfferController.getOfferById';
 import createCandidature from '@salesforce/apex/SR_ApplicationController.createCandidature';
 import uploadCv          from '@salesforce/apex/SR_FileUploadController.uploadCv';
-import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+
+// ✅ Nouveau : appel Heroku pour parser le CV
+import parseCv           from '@salesforce/apex/SR_HerokuCvParser.parseCv';
 
 export default class SrApplyForm extends NavigationMixin(LightningElement) {
 
@@ -17,6 +21,10 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
     @track fileName      = '';
     @track currentStep   = 1;
 
+    // ✅ Nouveau : état parsing CV
+    @track parsingCv     = false;
+    @track cvParsed      = false;
+
     // ── Étape 1 ──────────────────────────────────────────────────────
     @track firstName          = '';
     @track lastName           = '';
@@ -27,14 +35,14 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
     @track situationFamiliale = '';
 
     // ── Étape 2 ──────────────────────────────────────────────────────
-    @track tech              = '';
-    @track xp                = '';
-    @track soft              = '';
-    @track anneesExperience  = '';
-    @track dernierDiplome    = '';
-    @track niveauEtude       = '';
-    @track ecoleUniversite   = '';
-    @track anneeObtention    = '';
+    @track tech             = '';
+    @track xp               = '';
+    @track soft             = '';
+    @track anneesExperience = '';
+    @track dernierDiplome   = '';
+    @track niveauEtude      = '';
+    @track ecoleUniversite  = '';
+    @track anneeObtention   = '';
 
     isSubmitting = false;
     lastError    = '';
@@ -45,9 +53,16 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
     get isStep2() { return this.currentStep === 2; }
     get isStep3() { return this.currentStep === 3; }
 
-    get stepClass1() { return 'step' + (this.currentStep >= 1 ? ' step--active' : ''); }
-    get stepClass2() { return 'step' + (this.currentStep >= 2 ? ' step--active' : ''); }
-    get stepClass3() { return 'step' + (this.currentStep >= 3 ? ' step--active' : ''); }
+    get stepClass1() {
+        return 'step' + (this.currentStep >= 1 ? ' step--active' : '');
+    }
+    get stepClass2() {
+        return 'step' + (this.currentStep >= 2 ? ' step--active' : '');
+    }
+    get stepClass3() {
+        return 'step' + (this.currentStep >= 3 ? ' step--active' : '');
+    }
+    get isStep1Done() { return this.currentStep > 1; }
 
     // ── Options picklists ────────────────────────────────────────────
     get genderOptions() {
@@ -71,27 +86,21 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
 
     get niveauEtudeOptions() {
         return [
-            { label: '— Sélectionner —', value: ''        },
-            { label: 'Bac',              value: 'Bac'     },
-            { label: 'Bac+2',            value: 'Bac+2'   },
-            { label: 'Bac+3',            value: 'Bac+3'   },
-            { label: 'Bac+4',            value: 'Bac+4'   },
-            { label: 'Bac+5',            value: 'Bac+5'   },
-            { label: 'Doctorat',         value: 'Doctorat'}
+            { label: '— Sélectionner —', value: ''         },
+            { label: 'Bac',              value: 'Bac'      },
+            { label: 'Bac+2',            value: 'Bac+2'    },
+            { label: 'Bac+3',            value: 'Bac+3'    },
+            { label: 'Bac+4',            value: 'Bac+4'    },
+            { label: 'Bac+5',            value: 'Bac+5'    },
+            { label: 'Doctorat',         value: 'Doctorat' }
         ];
     }
 
-    // ── Chargement profil + offerId depuis sessionStorage ────────────
+    // ── Connexion ────────────────────────────────────────────────────
     async connectedCallback() {
-
-        // ✅ Lire offerId depuis sessionStorage
         this.offerId   = sessionStorage.getItem('applyOfferId')   || null;
         this.offerName = sessionStorage.getItem('applyOfferName') || '';
 
-        console.log('offerId depuis sessionStorage:', this.offerId);
-        console.log('offerName depuis sessionStorage:', this.offerName);
-
-        // Charger profil
         try {
             const p = await getProfile();
             if (p && p.isGuest === 'false') {
@@ -101,10 +110,9 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
             }
         } catch(e) {}
 
-        // Charger nom offre si absent
         try {
-            if (!this.offerName && this.offerId && this.offerId.length >= 15) {
-                const o = await getOffer({ offreId: this.offerId });
+            if (!this.offerName && this.offerId) {
+                const o    = await getOffer({ offreId: this.offerId });
                 this.offerName = o?.Titre__c || '';
             }
         } catch(e) {}
@@ -129,19 +137,6 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
     onEcoleUniversite  = (e) => { this.ecoleUniversite  = e.detail.value; }
     onAnneeObtention   = (e) => { this.anneeObtention   = e.detail.value; }
 
-    // ── Navigation étapes ────────────────────────────────────────────
-    goStep1 = () => { this.lastError = ''; this.currentStep = 1; }
-
-    goStep2 = () => {
-        this.lastError = '';
-        if (!this.firstName || !this.lastName || !this.email) {
-            this.lastError = 'Prénom, Nom et Email sont obligatoires.';
-            this.toast('Champs requis', this.lastError, 'warning');
-            return;
-        }
-        this.currentStep = 2;
-    }
-
     // ── Sélection fichier ────────────────────────────────────────────
     onFileChange = (e) => {
         const file = e.target.files[0];
@@ -162,7 +157,114 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
         }
         this.fileName     = file.name;
         this._pendingFile = file;
+        this.cvParsed     = false;
     }
+
+    // ── Navigation étape 1 → 2 ──────────────────────────────────────
+    goStep2 = async () => {
+        this.lastError = '';
+
+        // Validation
+        if (!this.firstName || !this.lastName || !this.email) {
+            this.lastError = 'Prénom, Nom et Email sont obligatoires.';
+            this.toast('Champs requis', this.lastError, 'warning');
+            return;
+        }
+
+        // ✅ Si CV présent → parser avec Heroku
+        if (this._pendingFile && !this.cvParsed) {
+            await this.parseCvWithHeroku();
+        }
+
+        this.currentStep = 2;
+    }
+
+    // ── Parser le CV avec Heroku ─────────────────────────────────────
+    parseCvWithHeroku = () => {
+        return new Promise((resolve) => {
+            this.parsingCv = true;
+            this.lastError = '';
+
+            const reader = new FileReader();
+
+            reader.onload = async () => {
+                try {
+                    const base64 = reader.result;
+
+                    console.log('Appel Heroku CV Parser...');
+
+                    // ✅ Appel Apex → Heroku
+                    const data = await parseCv({
+                        fileBase64  : base64,
+                        fileName    : this._pendingFile.name,
+                        contentType : this._pendingFile.type
+                    });
+
+                    console.log('Résultat Heroku:', JSON.stringify(data));
+
+                    if (data.errorMessage) {
+                        console.warn('Erreur parsing:', data.errorMessage);
+                        this.toast(
+                            'Attention',
+                            'CV analysé partiellement : ' + data.errorMessage,
+                            'warning'
+                        );
+                    } else {
+                        this.toast(
+                            'CV analysé !',
+                            'Les champs ont été remplis automatiquement.',
+                            'success'
+                        );
+                    }
+
+                    // ✅ Remplir automatiquement les champs étape 2
+                    if (data.anneesExperience != null && data.anneesExperience > 0) {
+                        this.anneesExperience = String(data.anneesExperience);
+                    }
+                    if (data.competencesTech) {
+                        this.tech = data.competencesTech;
+                    }
+                    if (data.experienceProf) {
+                        this.xp = data.experienceProf;
+                    }
+                    if (data.competencesPerso) {
+                        this.soft = data.competencesPerso;
+                    }
+                    if (data.dernierDiplome) {
+                        this.dernierDiplome = data.dernierDiplome;
+                    }
+                    if (data.ecoleUniversite) {
+                        this.ecoleUniversite = data.ecoleUniversite;
+                    }
+                    if (data.anneeObtention != null && data.anneeObtention > 0) {
+                        this.anneeObtention = String(data.anneeObtention);
+                    }
+
+                    this.cvParsed  = true;
+
+                } catch(e) {
+                    console.error('Erreur parseCv:', e);
+                    this.toast(
+                        'Attention',
+                        'Analyse du CV échouée. Remplissez manuellement.',
+                        'warning'
+                    );
+                } finally {
+                    this.parsingCv = false;
+                    resolve();
+                }
+            };
+
+            reader.onerror = () => {
+                this.parsingCv = false;
+                resolve();
+            };
+
+            reader.readAsDataURL(this._pendingFile);
+        });
+    }
+
+    goStep1 = () => { this.lastError = ''; this.currentStep = 1; }
 
     // ── Soumission ───────────────────────────────────────────────────
     submit = async () => {
@@ -172,7 +274,9 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
 
         try {
             if (!this.tech || !this.xp || !this.soft) {
-                throw new Error('Renseignez compétences techniques, expérience et compétences personnelles.');
+                throw new Error(
+                    'Renseignez compétences techniques, expérience et compétences personnelles.'
+                );
             }
             if (!this.offerId || String(this.offerId).trim().length < 15) {
                 throw new Error('Offre manquante.');
@@ -191,28 +295,27 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
                 dateNaissance     : this.dateNaissance      || null,
                 situationFamiliale: this.situationFamiliale || null,
                 anneesExperience  : this.anneesExperience
-                                    ? parseInt(this.anneesExperience, 10) : null,
+                    ? parseInt(this.anneesExperience, 10) : null,
                 dernierDiplome    : this.dernierDiplome     || null,
                 niveauEtude       : this.niveauEtude        || null,
                 ecoleUniversite   : this.ecoleUniversite    || null,
                 anneeObtention    : this.anneeObtention
-                                    ? parseInt(this.anneeObtention, 10) : null
+                    ? parseInt(this.anneeObtention, 10) : null
             });
 
             if (!candId) throw new Error('La création a échoué (Id vide).');
             this.candidatureId = candId;
 
-            // Upload CV si présent
+            // Upload CV
             if (this._pendingFile) {
                 await this.uploadFileNow(this._pendingFile);
             }
 
-            // ✅ Nettoyer sessionStorage après soumission
             sessionStorage.removeItem('applyOfferId');
             sessionStorage.removeItem('applyOfferName');
 
             this.currentStep = 3;
-            this.toast('Succès', 'Candidature enregistrée avec succès !', 'success');
+            this.toast('Succès', 'Candidature enregistrée !', 'success');
 
         } catch(e) {
             this.lastError = this.err(e);
@@ -252,7 +355,6 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
         });
     }
 
-    // ── Retour accueil ────────────────────────────────────────────────
     goBack = () => {
         sessionStorage.removeItem('applyOfferId');
         sessionStorage.removeItem('applyOfferName');
@@ -262,7 +364,6 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
         });
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────
     toast(title, message, variant) {
         this.dispatchEvent(new ShowToastEvent({ title, message, variant }));
     }

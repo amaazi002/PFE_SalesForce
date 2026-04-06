@@ -31,7 +31,6 @@
                             <th scope="col">
                                 <div class="slds-truncate">Type</div>
                             </th>
-                            <!-- ✅ Colonne Actions cachée pour Guest -->
                             <template if:false={isGuest}>
                                 <th scope="col" style="width:200px">
                                     <div class="slds-truncate">Actions</div>
@@ -56,7 +55,6 @@
                                 <td class={row.rowClass}>{row.deadlineFmt}</td>
                                 <td class={row.rowClass}>{row.Statut__c}</td>
                                 <td class={row.rowClass}>{row.typeLabel}</td>
-                                <!-- ✅ Bouton Modifier caché pour Guest -->
                                 <template if:false={isGuest}>
                                     <td>
                                         <div class="slds-button_group" role="group">
@@ -109,19 +107,19 @@
                         <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_fixed-layout">
                             <thead>
                                 <tr class="slds-line-height_reset">
-                                    <th style="width:190px">
+                                    <th style="width:180px">
                                         <div class="slds-truncate">Nom</div>
                                     </th>
-                                    <th style="width:190px">
+                                    <th style="width:150px">
                                         <div class="slds-truncate">Statut</div>
                                     </th>
-                                    <th style="width:190px">
-                                        <div class="slds-truncate">Date de candidature</div>
+                                    <th style="width:180px">
+                                        <div class="slds-truncate">Date candidature</div>
                                     </th>
-                                    <th style="width:190px">
+                                    <th style="width:100px">
                                         <div class="slds-truncate">Score</div>
                                     </th>
-                                    <th style="width:190px">
+                                    <th style="width:180px">
                                         <div class="slds-truncate">CV</div>
                                     </th>
                                 </tr>
@@ -142,23 +140,28 @@
                                             </div>
                                         </td>
                                         <td>
-                                            <div class="slds-truncate"
-                                                 title={cand.DateDepot__c}>
-                                                {cand.DateDepot__c}
+                                            <div class="slds-truncate">
+                                                {cand.createdDateFmt}
                                             </div>
                                         </td>
                                         <td>
-                                            <div class="slds-truncate"
-                                                 title={cand.Score_Matching__c}>
+                                            <div class="slds-truncate">
                                                 {cand.Score_Matching__c}
                                             </div>
                                         </td>
                                         <td>
-                                            <lightning-formatted-url
-                                                value={cand.cvUrl}
-                                                label={cand.cvLabel}
-                                                target="_blank">
-                                            </lightning-formatted-url>
+                                            <!-- ✅ Lien public CV -->
+                                            <template if:true={cand.hasCv}>
+                                                <a href={cand.cvUrl}
+                                                   target="_blank"
+                                                   rel="noopener noreferrer"
+                                                   class="slds-text-link">
+                                                     {cand.cvLabel}
+                                                </a>
+                                            </template>
+                                            <template if:false={cand.hasCv}>
+                                                <span class="slds-text-color_weak">—</span>
+                                            </template>
                                         </td>
                                     </tr>
                                 </template>

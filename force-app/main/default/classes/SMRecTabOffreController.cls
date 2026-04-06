@@ -48,6 +48,7 @@ public with sharing class SMRecTabOffreController {
                 rec.put('Visible_aux_candidat__c', 'Non');
             }
             update rec;
+
             return [
                 SELECT Id, Titre__c, Statut__c, Visible_aux_candidat__c
                 FROM   Offre__c
