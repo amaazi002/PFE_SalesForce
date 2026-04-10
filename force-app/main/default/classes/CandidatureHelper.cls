@@ -3,29 +3,46 @@ public without sharing class CandidatureHelper {
     public static void generateCvPublicLinks(Set<Id> candidatureIds) {
         if (candidatureIds == null || candidatureIds.isEmpty()) return;
 
-        List<ContentDocumentLink> links = [
-            SELECT ContentDocumentId,
-                   LinkedEntityId,
-                   ContentDocument.LatestPublishedVersionId
-            FROM ContentDocumentLink
-            WHERE LinkedEntityId IN :candidatureIds
-            AND ContentDocument.LatestPublishedVersionId != null
-        ];
+        // ✅ Filtrer les Ids null
+        Set<Id> validIds = new Set<Id>();
+        for (Id cId : candidatureIds) {
+            if (cId != null) validIds.add(cId);
+        }
+        if (validIds.isEmpty()) return;
 
-        if (links.isEmpty()) return;
+        // ✅ Requête ContentDocumentLink avec filtre valide
+        List<ContentDocumentLink> links;
+        try {
+            links = [
+                SELECT ContentDocumentId,
+                       LinkedEntityId,
+                       ContentDocument.LatestPublishedVersionId
+                FROM ContentDocumentLink
+                WHERE LinkedEntityId IN :validIds
+                AND ContentDocument.LatestPublishedVersionId != null
+            ];
+        } catch (Exception e) {
+            System.debug('Erreur ContentDocumentLink: ' + e.getMessage());
+            return;
+        }
 
-        Set<Id> versionIds = new Set<Id>();
+        if (links == null || links.isEmpty()) return;
+
+        Set<Id> versionIds               = new Set<Id>();
         Map<Id, Id> versionToCandidature = new Map<Id, Id>();
 
         for (ContentDocumentLink l : links) {
             Id versionId = l.ContentDocument.LatestPublishedVersionId;
-            versionIds.add(versionId);
-            versionToCandidature.put(versionId, l.LinkedEntityId);
+            if (versionId != null) {
+                versionIds.add(versionId);
+                versionToCandidature.put(versionId, l.LinkedEntityId);
+            }
         }
 
-        Map<Id, ContentDistribution> existingDist =
-            new Map<Id, ContentDistribution>();
+        if (versionIds.isEmpty()) return;
 
+        // ✅ Vérifier les distributions existantes
+        Map<Id, ContentDistribution> existingDist = new Map<Id, ContentDistribution>();
         for (ContentDistribution cd : [
             SELECT Id,
                    ContentVersionId,
@@ -37,6 +54,7 @@ public without sharing class CandidatureHelper {
             existingDist.put(cd.ContentVersionId, cd);
         }
 
+        // ✅ Créer uniquement les distributions manquantes
         List<ContentDistribution> toCreate = new List<ContentDistribution>();
         for (Id versionId : versionIds) {
             if (!existingDist.containsKey(versionId)) {
@@ -53,7 +71,14 @@ public without sharing class CandidatureHelper {
         }
 
         if (!toCreate.isEmpty()) {
-            insert toCreate;
+            try {
+                insert toCreate;
+            } catch (Exception e) {
+                System.debug('Erreur insert ContentDistribution: ' + e.getMessage());
+                return;
+            }
+
+            // ✅ Récupérer les nouvelles distributions avec leurs URLs
             for (ContentDistribution cd : [
                 SELECT Id,
                        ContentVersionId,
@@ -66,13 +91,13 @@ public without sharing class CandidatureHelper {
             }
         }
 
+        // ✅ Mettre à jour les candidatures avec l'URL publique
         List<Candidature__c> toUpdate = new List<Candidature__c>();
         for (Id versionId : versionIds) {
             ContentDistribution cd = existingDist.get(versionId);
             Id candId              = versionToCandidature.get(versionId);
 
             if (cd != null && candId != null) {
-                // ✅ Utiliser ContentDownloadUrl au lieu de DistributionPublicUrl
                 String url = cd.ContentDownloadUrl != null
                     ? cd.ContentDownloadUrl
                     : cd.DistributionPublicUrl;
@@ -87,7 +112,11 @@ public without sharing class CandidatureHelper {
         }
 
         if (!toUpdate.isEmpty()) {
-            update toUpdate;
+            try {
+                update toUpdate;
+            } catch (Exception e) {
+                System.debug('Erreur update Candidature: ' + e.getMessage());
+            }
         }
     }
 }

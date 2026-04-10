@@ -1,25 +1,25 @@
 import { LightningElement, track } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
-import getUsers from '@salesforce/apex/SMAdminUsersController.getUsers';
-import blockUser from '@salesforce/apex/SMAdminUsersController.blockUser';
-import banUser from '@salesforce/apex/SMAdminUsersController.banUser';
+import getUsers       from '@salesforce/apex/SMAdminUsersController.getUsers';
+import blockUser      from '@salesforce/apex/SMAdminUsersController.blockUser';
+import banUser        from '@salesforce/apex/SMAdminUsersController.banUser';
 import deactivateUser from '@salesforce/apex/SMAdminUsersController.deactivateUser';
-import deleteUser from '@salesforce/apex/SMAdminUsersController.deleteUser';
+import deleteUser     from '@salesforce/apex/SMAdminUsersController.deleteUser';
 
 export default class SMAdminUsers extends LightningElement {
     @track users = [];
     @track searchTerm = '';
 
     // Confirmation modal
-    isConfirmModalOpen = false;
-    confirmTitle = '';
-    confirmMessage = '';
-    confirmIcon = '';
-    confirmVariant = 'brand';
-    confirmUserName = '';
-    confirmHeaderClass = 'slds-modal__header';
-    pendingAction = null;
-    pendingUserId = null;
+    isConfirmModalOpen  = false;
+    confirmTitle        = '';
+    confirmMessage      = '';
+    confirmIcon         = '';
+    confirmVariant      = 'brand';
+    confirmUserName     = '';
+    confirmHeaderClass  = 'slds-modal__header';
+    pendingAction       = null;
+    pendingUserId       = null;
 
     connectedCallback() {
         this.loadUsers();
@@ -28,7 +28,7 @@ export default class SMAdminUsers extends LightningElement {
     async loadUsers() {
         try {
             const data = await getUsers();
-            console.log('Users reçus:', JSON.stringify(data));
+            console.log('Accounts reçus:', JSON.stringify(data));
             this.users = (data || []).map(u => this.mapUser(u));
         } catch (e) {
             this.toast('Erreur', this.err(e), 'error');
@@ -36,27 +36,35 @@ export default class SMAdminUsers extends LightningElement {
     }
 
     mapUser(u) {
-        // ✅ u.Name avec N majuscule
-        const fullName = u.Name || '—';
+        // ✅ Données viennent du Wrapper Apex
+        const firstName = u.firstName || '';
+        const lastName  = u.lastName  || '';
+        const fullName  = u.fullName  || (firstName + ' ' + lastName).trim() || '—';
+        const email     = u.email     || '—';
 
-        // ✅ Initiales correctes
-        const nameParts = fullName.split(' ');
-        const initials = nameParts.length >= 2
-            ? (nameParts[0][0] + nameParts[1][0]).toUpperCase()
+        // ✅ Initiales
+        const initials = firstName && lastName
+            ? (firstName[0] + lastName[0]).toUpperCase()
             : fullName[0]?.toUpperCase() || '?';
 
-        const statut         = u.Statut__c || 'Actif';
+        const statut         = u.statut      || 'Actif';
         const statutLabel    = statut;
         const badgeClass     = this.getBadgeClass(statut);
         const rowClass       = this.getRowClass(statut);
-        const createdDateFmt = u.CreatedDate
-            ? new Date(u.CreatedDate).toLocaleDateString('fr-FR') : '';
-        const roleLabel      = u.Role__c || u.Profile?.Name || '—';
+        const roleLabel      = u.recordTypeName || '—';
+
+        // ✅ Formatter la date
+        const createdDateFmt = u.createdDate
+            ? new Date(u.createdDate).toLocaleDateString('fr-FR') : '';
 
         return {
             ...u,
-            fullName,       // ✅ N majuscule
+            fullName,
+            firstName,
+            lastName,
+            email,
             initials,
+            statut,
             statutLabel,
             badgeClass,
             rowClass,
@@ -92,8 +100,8 @@ export default class SMAdminUsers extends LightningElement {
         const term = this.searchTerm.toLowerCase();
         return this.users.filter(u =>
             (u.fullName  || '').toLowerCase().includes(term) ||
-            (u.Email     || '').toLowerCase().includes(term) ||
-            (u.Role__c   || '').toLowerCase().includes(term)
+            (u.email     || '').toLowerCase().includes(term) ||
+            (u.roleLabel || '').toLowerCase().includes(term)
         );
     }
 
@@ -105,8 +113,7 @@ export default class SMAdminUsers extends LightningElement {
         this.searchTerm = event.target.value;
     }
 
-    // ── Dropdown (3 points) ────────────────────────────────────
-    // ✅ Utiliser template click au lieu de document
+    // ── Dropdown ───────────────────────────────────────────────
     toggleDropdown(event) {
         event.stopPropagation();
         const id = event.currentTarget.dataset.id;
@@ -116,9 +123,7 @@ export default class SMAdminUsers extends LightningElement {
         }));
     }
 
-    // ✅ Fermer si on clique ailleurs dans le composant
-    handleOutsideClick(event) {
-        const clickedId = event.target.dataset.id;
+    handleOutsideClick() {
         this.users = this.users.map(u => ({
             ...u,
             isMenuOpen: false
@@ -132,7 +137,6 @@ export default class SMAdminUsers extends LightningElement {
         const userId = event.currentTarget.dataset.id;
         const user   = this.users.find(u => u.Id === userId);
 
-        // Fermer le dropdown
         this.users = this.users.map(u => ({ ...u, isMenuOpen: false }));
 
         if (action === 'view') {
@@ -147,42 +151,42 @@ export default class SMAdminUsers extends LightningElement {
     }
 
     viewProfile(userId) {
-        window.open(`/lightning/r/User/${userId}/view`, '_blank');
+        window.open(`/lightning/r/Account/${userId}/view`, '_blank');
     }
 
     openConfirmModal(action) {
         const config = {
             block: {
-                title   : 'Bloquer l\'utilisateur',
-                message : 'Êtes-vous sûr de vouloir bloquer cet utilisateur ?',
-                icon    : 'utility:block_visitor',
-                variant : 'destructive',
+                title      : 'Bloquer l\'utilisateur',
+                message    : 'Êtes-vous sûr de vouloir bloquer cet utilisateur ?',
+                icon       : 'utility:block_visitor',
+                variant    : 'destructive',
                 headerClass: 'slds-modal__header modal-header_warning'
             },
             ban: {
-                title   : 'Bannir l\'utilisateur',
-                message : 'Êtes-vous sûr de vouloir bannir définitivement cet utilisateur ?',
-                icon    : 'utility:ban',
-                variant : 'destructive',
+                title      : 'Bannir l\'utilisateur',
+                message    : 'Êtes-vous sûr de vouloir bannir définitivement cet utilisateur ?',
+                icon       : 'utility:ban',
+                variant    : 'destructive',
                 headerClass: 'slds-modal__header modal-header_danger'
             },
             deactivate: {
-                title   : 'Désactiver l\'utilisateur',
-                message : 'Êtes-vous sûr de vouloir désactiver cet utilisateur ?',
-                icon    : 'utility:pause',
-                variant : 'neutral',
+                title      : 'Désactiver l\'utilisateur',
+                message    : 'Êtes-vous sûr de vouloir désactiver cet utilisateur ?',
+                icon       : 'utility:pause',
+                variant    : 'neutral',
                 headerClass: 'slds-modal__header modal-header_warning'
             },
             delete: {
-                title   : 'Supprimer l\'utilisateur',
-                message : '⚠️ Cette action est irréversible ! Confirmer la suppression ?',
-                icon    : 'utility:delete',
-                variant : 'destructive',
+                title      : 'Supprimer l\'utilisateur',
+                message    : '⚠️ Cette action est irréversible ! Confirmer la suppression ?',
+                icon       : 'utility:delete',
+                variant    : 'destructive',
                 headerClass: 'slds-modal__header modal-header_danger'
             }
         };
 
-        const cfg = config[action] || {};
+        const cfg               = config[action] || {};
         this.confirmTitle       = cfg.title       || 'Confirmation';
         this.confirmMessage     = cfg.message     || 'Confirmer cette action ?';
         this.confirmIcon        = cfg.icon        || 'utility:warning';
@@ -193,9 +197,9 @@ export default class SMAdminUsers extends LightningElement {
 
     closeConfirmModal() {
         this.isConfirmModalOpen = false;
-        this.pendingAction   = null;
-        this.pendingUserId   = null;
-        this.confirmUserName = '';
+        this.pendingAction      = null;
+        this.pendingUserId      = null;
+        this.confirmUserName    = '';
     }
 
     async confirmAction() {
@@ -238,7 +242,7 @@ export default class SMAdminUsers extends LightningElement {
             if (u.Id !== userId) return u;
             return {
                 ...u,
-                Statut__c   : newStatut,
+                statut      : newStatut,
                 statutLabel : newStatut,
                 badgeClass  : this.getBadgeClass(newStatut),
                 rowClass    : this.getRowClass(newStatut)
@@ -252,7 +256,7 @@ export default class SMAdminUsers extends LightningElement {
 
     err(e) {
         const b = e?.body || e?.detail || {};
-        if (b.message) return b.message;
+        if (b.message)            return b.message;
         if (b.pageErrors?.length) return b.pageErrors[0].message;
         return e?.message || 'Une erreur est survenue';
     }

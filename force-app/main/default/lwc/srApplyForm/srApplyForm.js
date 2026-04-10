@@ -6,26 +6,28 @@ import getProfile        from '@salesforce/apex/SR_OfferController.getCurrentUse
 import getOffer          from '@salesforce/apex/SR_OfferController.getOfferById';
 import createCandidature from '@salesforce/apex/SR_ApplicationController.createCandidature';
 import uploadCv          from '@salesforce/apex/SR_FileUploadController.uploadCv';
-
-// ✅ Nouveau : appel Heroku pour parser le CV
 import parseCv           from '@salesforce/apex/SR_HerokuCvParser.parseCv';
 
 export default class SrApplyForm extends NavigationMixin(LightningElement) {
 
-    // ── State ────────────────────────────────────────────────────────
-    @track offerId       = null;
-    @track offerName     = '';
-    @track candidatureId = null;
-    @track cvUploaded    = false;
-    @track uploadingCv   = false;
-    @track fileName      = '';
-    @track currentStep   = 1;
+    // ══════════════════════════════════════
+    // PROPRIÉTÉS
+    // ══════════════════════════════════════
+    @track offerId            = null;
+    @track offerName          = '';
+    @track candidatureId      = null;
+    @track currentStep        = 1;
 
-    // ✅ Nouveau : état parsing CV
-    @track parsingCv     = false;
-    @track cvParsed      = false;
+    // Fichier
+    @track fileName           = '';
+    @track fileSize           = '';
+    @track cvUploaded         = false;
+    @track uploadingCv        = false;
+    @track parsingCv          = false;
+    @track cvParsed           = false;
+    @track cvParseError       = false;
 
-    // ── Étape 1 ──────────────────────────────────────────────────────
+    // Étape 1 - Identité
     @track firstName          = '';
     @track lastName           = '';
     @track email              = '';
@@ -34,24 +36,30 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
     @track sexe               = '';
     @track situationFamiliale = '';
 
-    // ── Étape 2 ──────────────────────────────────────────────────────
-    @track tech             = '';
-    @track xp               = '';
-    @track soft             = '';
-    @track anneesExperience = '';
-    @track dernierDiplome   = '';
-    @track niveauEtude      = '';
-    @track ecoleUniversite  = '';
-    @track anneeObtention   = '';
+    // Étape 2 - Profil pro
+    @track tech               = '';
+    @track xp                 = '';
+    @track soft               = '';
+    @track anneesExperience   = '';
+    @track dernierDiplome     = '';
+    @track niveauEtude        = '';
+    @track ecoleUniversite    = '';
+    @track anneeObtention     = '';
 
-    isSubmitting = false;
-    lastError    = '';
+    // État
+    @track isSubmitting       = false;
+    @track lastError          = '';
+
     _pendingFile = null;
 
-    // ── Getters étapes ───────────────────────────────────────────────
-    get isStep1() { return this.currentStep === 1; }
-    get isStep2() { return this.currentStep === 2; }
-    get isStep3() { return this.currentStep === 3; }
+    // ══════════════════════════════════════
+    // GETTERS - NAVIGATION
+    // ══════════════════════════════════════
+    get isStep1()     { return this.currentStep === 1; }
+    get isStep2()     { return this.currentStep === 2; }
+    get isStep3()     { return this.currentStep === 3; }
+    get isStep1Done() { return this.currentStep > 1;   }
+    get isStep2Done() { return this.currentStep > 2;   }
 
     get stepClass1() {
         return 'step' + (this.currentStep >= 1 ? ' step--active' : '');
@@ -62,9 +70,10 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
     get stepClass3() {
         return 'step' + (this.currentStep >= 3 ? ' step--active' : '');
     }
-    get isStep1Done() { return this.currentStep > 1; }
 
-    // ── Options picklists ────────────────────────────────────────────
+    // ══════════════════════════════════════
+    // GETTERS - OPTIONS
+    // ══════════════════════════════════════
     get genderOptions() {
         return [
             { label: '— Sélectionner —', value: ''      },
@@ -96,7 +105,9 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
         ];
     }
 
-    // ── Connexion ────────────────────────────────────────────────────
+    // ══════════════════════════════════════
+    // LIFECYCLE
+    // ══════════════════════════════════════
     async connectedCallback() {
         this.offerId   = sessionStorage.getItem('applyOfferId')   || null;
         this.offerName = sessionStorage.getItem('applyOfferName') || '';
@@ -108,17 +119,23 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
                 this.lastName  = p.lastName  || '';
                 this.email     = p.email     || '';
             }
-        } catch(e) {}
+        } catch(e) {
+            console.warn('getProfile ignoré:', e);
+        }
 
         try {
             if (!this.offerName && this.offerId) {
-                const o    = await getOffer({ offreId: this.offerId });
+                const o        = await getOffer({ offreId: this.offerId });
                 this.offerName = o?.Titre__c || '';
             }
-        } catch(e) {}
+        } catch(e) {
+            console.warn('getOffer ignoré:', e);
+        }
     }
 
-    // ── Handlers étape 1 ─────────────────────────────────────────────
+    // ══════════════════════════════════════
+    // HANDLERS - ÉTAPE 1
+    // ══════════════════════════════════════
     onFirst              = (e) => { this.firstName          = e.detail.value; }
     onLast               = (e) => { this.lastName           = e.detail.value; }
     onEmail              = (e) => { this.email              = e.detail.value; }
@@ -127,7 +144,9 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
     onSexe               = (e) => { this.sexe               = e.detail.value; }
     onSituationFamiliale = (e) => { this.situationFamiliale = e.detail.value; }
 
-    // ── Handlers étape 2 ─────────────────────────────────────────────
+    // ══════════════════════════════════════
+    // HANDLERS - ÉTAPE 2
+    // ══════════════════════════════════════
     onTech             = (e) => { this.tech             = e.detail.value; }
     onXp               = (e) => { this.xp               = e.detail.value; }
     onSoft             = (e) => { this.soft             = e.detail.value; }
@@ -137,118 +156,163 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
     onEcoleUniversite  = (e) => { this.ecoleUniversite  = e.detail.value; }
     onAnneeObtention   = (e) => { this.anneeObtention   = e.detail.value; }
 
-    // ── Sélection fichier ────────────────────────────────────────────
+    // ══════════════════════════════════════
+    // GESTION FICHIER CV
+    // ══════════════════════════════════════
     onFileChange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        const allowed = [
+        const allowedTypes = [
             'application/pdf',
             'application/msword',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
         ];
-        if (!allowed.includes(file.type)) {
+        const allowedExt = ['pdf', 'doc', 'docx'];
+        const ext = file.name.split('.').pop().toLowerCase();
+
+        if (!allowedTypes.includes(file.type) && !allowedExt.includes(ext)) {
             this.toast('Erreur', 'Format non autorisé. PDF, DOC ou DOCX uniquement.', 'error');
             return;
         }
+
         if (file.size > 5 * 1024 * 1024) {
             this.toast('Erreur', 'Fichier trop volumineux (max 5 Mo).', 'error');
             return;
         }
+
         this.fileName     = file.name;
+        this.fileSize     = this.formatSize(file.size);
         this._pendingFile = file;
         this.cvParsed     = false;
+        this.cvParseError = false;
+
+        console.log('✅ Fichier sélectionné:', file.name, '|', this.fileSize, '|', file.type);
     }
 
-    // ── Navigation étape 1 → 2 ──────────────────────────────────────
+    formatSize(bytes) {
+        if (bytes < 1024)        return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    // ══════════════════════════════════════
+    // NAVIGATION
+    // ══════════════════════════════════════
     goStep2 = async () => {
         this.lastError = '';
 
-        // Validation
-        if (!this.firstName || !this.lastName || !this.email) {
+        // ✅ Validation champs obligatoires
+        if (!this.firstName?.trim() || !this.lastName?.trim() || !this.email?.trim()) {
             this.lastError = 'Prénom, Nom et Email sont obligatoires.';
             this.toast('Champs requis', this.lastError, 'warning');
             return;
         }
 
-        // ✅ Si CV présent → parser avec Heroku
+        // ✅ Validation email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(this.email)) {
+            this.lastError = 'Adresse email invalide.';
+            this.toast('Email invalide', this.lastError, 'warning');
+            return;
+        }
+
+        // ✅ Parser le CV si présent et pas encore parsé
         if (this._pendingFile && !this.cvParsed) {
-            await this.parseCvWithHeroku();
+            await this.parseCvWithRender();
         }
 
         this.currentStep = 2;
     }
 
-    // ── Parser le CV avec Heroku ─────────────────────────────────────
-    parseCvWithHeroku = () => {
+    goStep1 = () => {
+        this.lastError   = '';
+        this.currentStep = 1;
+    }
+
+    goBack = () => {
+        sessionStorage.removeItem('applyOfferId');
+        sessionStorage.removeItem('applyOfferName');
+        this[NavigationMixin.Navigate]({
+            type      : 'comm__namedPage',
+            attributes: { name: 'Home' }
+        });
+    }
+
+    // ══════════════════════════════════════
+    // PARSING CV ✅ CORRIGÉ
+    // ══════════════════════════════════════
+    parseCvWithRender = () => {
         return new Promise((resolve) => {
-            this.parsingCv = true;
-            this.lastError = '';
+            this.parsingCv    = true;
+            this.cvParseError = false;
+            this.lastError    = '';
 
             const reader = new FileReader();
 
-            reader.onload = async () => {
+            reader.onload = async (event) => {
                 try {
-                    const base64 = reader.result;
+                    const fullBase64 = event.target.result;
 
-                    console.log('Appel Heroku CV Parser...');
+                    // ✅ Extraire uniquement la partie base64
+                    let base64Only = fullBase64;
+                    if (fullBase64 && fullBase64.includes(',')) {
+                        base64Only = fullBase64.split(',')[1];
+                    }
 
-                    // ✅ Appel Apex → Heroku
+                    console.log('Fichier:', this._pendingFile.name);
+                    console.log('Type:', this._pendingFile.type);
+                    console.log('Base64 longueur:', base64Only.length);
+
+                    // ✅ Appel Apex
                     const data = await parseCv({
-                        fileBase64  : base64,
+                        fileBase64  : base64Only,
                         fileName    : this._pendingFile.name,
                         contentType : this._pendingFile.type
                     });
 
-                    console.log('Résultat Heroku:', JSON.stringify(data));
+                    console.log('Résultat:', JSON.stringify(data));
 
-                    if (data.errorMessage) {
-                        console.warn('Erreur parsing:', data.errorMessage);
-                        this.toast(
-                            'Attention',
-                            'CV analysé partiellement : ' + data.errorMessage,
-                            'warning'
-                        );
-                    } else {
-                        this.toast(
-                            'CV analysé !',
-                            'Les champs ont été remplis automatiquement.',
-                            'success'
-                        );
+                    if (!data) {
+                        throw new Error('Réponse vide');
                     }
 
-                    // ✅ Remplir automatiquement les champs étape 2
-                    if (data.anneesExperience != null && data.anneesExperience > 0) {
+                    // ✅ Remplir les champs
+                    if (data.anneesExperience != null && Number(data.anneesExperience) > 0) {
                         this.anneesExperience = String(data.anneesExperience);
                     }
-                    if (data.competencesTech) {
-                        this.tech = data.competencesTech;
+                    if (data.competencesTech  && data.competencesTech.trim()) {
+                        this.tech             = data.competencesTech;
                     }
-                    if (data.experienceProf) {
-                        this.xp = data.experienceProf;
+                    if (data.experienceProf   && data.experienceProf.trim()) {
+                        this.xp               = data.experienceProf;
                     }
-                    if (data.competencesPerso) {
-                        this.soft = data.competencesPerso;
+                    if (data.competencesPerso && data.competencesPerso.trim()) {
+                        this.soft             = data.competencesPerso;
                     }
-                    if (data.dernierDiplome) {
-                        this.dernierDiplome = data.dernierDiplome;
+                    if (data.dernierDiplome   && data.dernierDiplome.trim()) {
+                        this.dernierDiplome   = data.dernierDiplome;
                     }
-                    if (data.ecoleUniversite) {
-                        this.ecoleUniversite = data.ecoleUniversite;
+                    if (data.ecoleUniversite  && data.ecoleUniversite.trim()) {
+                        this.ecoleUniversite  = data.ecoleUniversite;
                     }
-                    if (data.anneeObtention != null && data.anneeObtention > 0) {
-                        this.anneeObtention = String(data.anneeObtention);
+                    if (data.anneeObtention != null && Number(data.anneeObtention) > 0) {
+                        this.anneeObtention   = String(data.anneeObtention);
                     }
 
-                    this.cvParsed  = true;
+                    if (data.errorMessage) {
+                        this.cvParseError = true;
+                        this.toast('Attention', data.errorMessage, 'warning');
+                    } else {
+                        this.cvParsed = true;
+                        this.toast('CV analysé !', 'Champs remplis automatiquement.', 'success');
+                    }
 
                 } catch(e) {
-                    console.error('Erreur parseCv:', e);
-                    this.toast(
-                        'Attention',
-                        'Analyse du CV échouée. Remplissez manuellement.',
-                        'warning'
-                    );
+                    console.error('Erreur:', e?.body?.message || e?.message);
+                    this.cvParseError = true;
+                    this.lastError    = e?.body?.message || e?.message || 'Erreur inconnue';
+                    this.toast('Erreur', this.lastError, 'error');
                 } finally {
                     this.parsingCv = false;
                     resolve();
@@ -264,24 +328,25 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
         });
     }
 
-    goStep1 = () => { this.lastError = ''; this.currentStep = 1; }
-
-    // ── Soumission ───────────────────────────────────────────────────
+    // ══════════════════════════════════════
+    // SOUMISSION
+    // ══════════════════════════════════════
     submit = async () => {
         if (this.isSubmitting) return;
         this.isSubmitting = true;
         this.lastError    = '';
 
         try {
-            if (!this.tech || !this.xp || !this.soft) {
-                throw new Error(
-                    'Renseignez compétences techniques, expérience et compétences personnelles.'
-                );
-            }
-            if (!this.offerId || String(this.offerId).trim().length < 15) {
-                throw new Error('Offre manquante.');
+            // ✅ Validation étape 2
+            if (!this.tech?.trim() || !this.xp?.trim() || !this.soft?.trim()) {
+                throw new Error('Renseignez compétences techniques, expérience et compétences personnelles.');
             }
 
+            if (!this.offerId || String(this.offerId).trim().length < 15) {
+                throw new Error('Offre manquante. Veuillez accéder au formulaire depuis une offre.');
+            }
+
+            // ✅ Créer la candidature
             const candId = await createCandidature({
                 offreId           : String(this.offerId).trim(),
                 sexe              : this.sexe               || null,
@@ -306,7 +371,7 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
             if (!candId) throw new Error('La création a échoué (Id vide).');
             this.candidatureId = candId;
 
-            // Upload CV
+            // ✅ Uploader le CV si présent
             if (this._pendingFile) {
                 await this.uploadFileNow(this._pendingFile);
             }
@@ -315,7 +380,7 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
             sessionStorage.removeItem('applyOfferName');
 
             this.currentStep = 3;
-            this.toast('Succès', 'Candidature enregistrée !', 'success');
+            this.toast('Succès', 'Candidature enregistrée avec succès !', 'success');
 
         } catch(e) {
             this.lastError = this.err(e);
@@ -325,17 +390,20 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
         }
     }
 
-    // ── Upload Base64 ─────────────────────────────────────────────────
+    // ══════════════════════════════════════
+    // UPLOAD FICHIER
+    // ══════════════════════════════════════
     uploadFileNow = (file) => {
         return new Promise((resolve, reject) => {
             this.uploadingCv = true;
             const reader     = new FileReader();
-            reader.onload = async () => {
+
+            reader.onload = async (event) => {
                 try {
                     await uploadCv({
                         recordId   : this.candidatureId,
                         fileName   : file.name,
-                        base64Data : reader.result,
+                        base64Data : event.target.result,
                         contentType: file.type,
                         makePublic : false
                     });
@@ -343,27 +411,24 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
                     this.uploadingCv = false;
                     resolve();
                 } catch(e) {
+                    console.error('Erreur upload CV:', e);
                     this.uploadingCv = false;
                     reject(e);
                 }
             };
+
             reader.onerror = () => {
                 this.uploadingCv = false;
                 reject(new Error('Impossible de lire le fichier.'));
             };
+
             reader.readAsDataURL(file);
         });
     }
 
-    goBack = () => {
-        sessionStorage.removeItem('applyOfferId');
-        sessionStorage.removeItem('applyOfferName');
-        this[NavigationMixin.Navigate]({
-            type      : 'comm__namedPage',
-            attributes: { name: 'Home' }
-        });
-    }
-
+    // ══════════════════════════════════════
+    // UTILITAIRES
+    // ══════════════════════════════════════
     toast(title, message, variant) {
         this.dispatchEvent(new ShowToastEvent({ title, message, variant }));
     }

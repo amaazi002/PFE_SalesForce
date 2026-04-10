@@ -4,11 +4,9 @@
   align-items     : flex-start;
   padding         : 48px 16px;
   min-height      : 80vh;
-  background      : #f3f2f2;
 }
 
 .register-card {
-  background    : #ffffff;
   border        : 1px solid #dddbda;
   border-radius : 10px;
   box-shadow    : 0 4px 20px rgba(0,0,0,.10);

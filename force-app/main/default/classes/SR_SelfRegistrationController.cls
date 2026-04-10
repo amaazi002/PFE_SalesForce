@@ -25,22 +25,36 @@ public without sharing class SR_SelfRegistrationController {
 
         String cleanEmail = email.trim().toLowerCase();
 
-        List<Contact> existing = [SELECT Id FROM Contact WHERE Email = :cleanEmail LIMIT 1];
+        List<Contact> existing = [
+            SELECT Id FROM Contact
+            WHERE Email = :cleanEmail
+            LIMIT 1
+        ];
         if (!existing.isEmpty())
             throw new AuraHandledException('Un compte existe deja avec cet email.');
 
-        List<SR_OTP__c> oldOtps = [SELECT Id FROM SR_OTP__c WHERE Email__c = :cleanEmail];
+        // ✅ Supprimer les anciens OTP
+        List<SR_OTP__c> oldOtps = [
+            SELECT Id FROM SR_OTP__c
+            WHERE Email__c = :cleanEmail
+        ];
         if (!oldOtps.isEmpty()) delete oldOtps;
 
+        // ✅ Générer le code
         String code = generateOtpCode();
         System.debug('OTP generated for ' + cleanEmail + ' : ' + code);
 
-        SR_OTP__c otp = new SR_OTP__c();
-        otp.Email__c  = cleanEmail;
-        otp.Code__c   = code;
+        // ✅ Insérer l'OTP
+        SR_OTP__c otp = new SR_OTP__c(
+            Email__c = cleanEmail,
+            Code__c  = code
+        );
         insert otp;
-        System.debug('OTP inserted: ' + otp.Id + ' for ' + cleanEmail);
-        // Email envoye automatiquement par SR_OTP_Trigger (after insert)
+
+        // ✅ Envoyer l'email DIRECTEMENT ici (plus fiable que le trigger)
+        SR_OTP_EmailHelper.sendOtpEmail(cleanEmail, code);
+
+        System.debug('OTP inserted: ' + otp.Id + ' | code: ' + code);
     }
 
     // === ETAPE 2 : Verifier OTP et creer compte ===
@@ -52,13 +66,11 @@ public without sharing class SR_SelfRegistrationController {
             String password,
             String confirmPassword,
             String otpCode) {
+
         System.debug('=== verifyOtpAndRegister ===');
-        System.debug('email:'                          + email);
-        System.debug('password:'                       + password);
-        System.debug('confirmPassword:'                + confirmPassword);
-        System.debug('otpCode:'                        + otpCode);
-        System.debug('password == confirmPassword: ' + (password == confirmPassword));
-        System.debug('=========================');
+        System.debug('email: '    + email);
+        System.debug('otpCode: '  + otpCode);
+
         if (String.isBlank(email) || String.isBlank(otpCode))
             throw new AuraHandledException('Email et code OTP sont obligatoires.');
         if (String.isBlank(password) || password != confirmPassword)
@@ -66,7 +78,8 @@ public without sharing class SR_SelfRegistrationController {
 
         String cleanEmail = email.trim().toLowerCase();
         String cleanCode  = otpCode.trim();
-        System.debug('verifyOtpAndRegister - email: ' + cleanEmail + ' | code: ' + cleanCode);
+
+        System.debug('cleanEmail: ' + cleanEmail + ' | cleanCode: ' + cleanCode);
 
         List<SR_OTP__c> otps = [
             SELECT Id, Code__c, CreatedDate
@@ -75,18 +88,22 @@ public without sharing class SR_SelfRegistrationController {
             ORDER BY CreatedDate DESC
             LIMIT  1
         ];
+
         System.debug('OTP records found: ' + otps.size());
+
         if (otps.isEmpty())
             throw new AuraHandledException('Aucun code OTP trouve. Veuillez recommencer.');
 
         SR_OTP__c otp = otps[0];
 
+        System.debug('Stored code: [' + otp.Code__c + '] | Entered: [' + cleanCode + ']');
+
+        // ✅ Vérifier expiration
         Datetime expiresAt = otp.CreatedDate.addMinutes(OTP_EXPIRY_MINUTES);
-        System.debug('expiresAt: ' + expiresAt + ' | now: ' + Datetime.now());
         if (Datetime.now() > expiresAt)
             throw new AuraHandledException('Le code OTP a expire. Demandez-en un nouveau.');
 
-        System.debug('Stored: [' + otp.Code__c + '] | Entered: [' + cleanCode + ']');
+        // ✅ Vérifier le code
         if (otp.Code__c != cleanCode)
             throw new AuraHandledException('Code OTP incorrect.');
 
@@ -108,75 +125,110 @@ public without sharing class SR_SelfRegistrationController {
     public static String selfRegister(SelfRegInput input) {
         if (input == null)
             throw new AuraHandledException('Donnees manquantes.');
-        return createPortalUser(input.firstName, input.lastName, input.email, input.password);
+        return createPortalUser(
+            input.firstName,
+            input.lastName,
+            input.email,
+            input.password
+        );
     }
 
     // === Methodes privees ===
-
     private static String createPortalUser(
-            String firstName, String lastName,
-            String email,     String password) {
+        String firstName, String lastName,
+        String email,     String password) {
 
-        Account portalAccount;
-        List<Account> accounts = [SELECT Id FROM Account WHERE Name = :PORTAL_ACCOUNT LIMIT 1];
-        if (accounts.isEmpty()) {
-            portalAccount = new Account(Name = PORTAL_ACCOUNT);
-            insert portalAccount;
-        } else {
-            portalAccount = accounts[0];
-        }
+        // ── 1. Récupérer le Record Type Person Account
+        RecordType personAccountRT = [
+            SELECT Id
+            FROM   RecordType
+            WHERE  SObjectType = 'Account'
+            AND    Name        = 'Person Account'
+            LIMIT  1
+        ];
 
-        List<Contact> existingContacts = [SELECT Id FROM Contact WHERE Email = :email LIMIT 1];
-        if (!existingContacts.isEmpty())
-            throw new AuraHandledException('Un compte existe deja avec cet email.');
+        // ── 2. Vérifier doublon
+        List<Account> existingAccounts = [
+            SELECT Id
+            FROM   Account
+            WHERE  PersonEmail     = :email
+            AND    IsPersonAccount = true
+            LIMIT  1
+        ];
+        if (!existingAccounts.isEmpty())
+            throw new AuraHandledException('Un compte existe déjà avec cet email.');
 
-        Contact c   = new Contact();
-        c.FirstName = firstName;
-        c.LastName  = lastName;
-        c.Email     = email;
-        c.AccountId = portalAccount.Id;
-        insert c;
+        // ── 3. Créer le Person Account
+        Account personAccount      = new Account(
+            RecordTypeId = personAccountRT.Id,
+            FirstName    = firstName,
+            LastName     = lastName,
+            PersonEmail  = email
+        );
+        insert personAccount;
 
-        User u = new User();
-        u.FirstName         = firstName;
-        u.LastName          = lastName;
-        u.Email             = email;
-        u.Username          = email;
-        u.ContactId         = c.Id;
-        u.ProfileId         = COMMUNITY_PROFILE;
-        u.TimeZoneSidKey    = 'Europe/Paris';
-        u.LocaleSidKey      = 'fr_FR';
-        u.EmailEncodingKey  = 'UTF-8';
-        u.LanguageLocaleKey = 'fr';
+        // ── 4. Récupérer le Contact auto-généré
+        Account paWithContact = [
+            SELECT Id, PersonContactId
+            FROM   Account
+            WHERE  Id = :personAccount.Id
+            LIMIT  1
+        ];
 
-        String aliasBase = (firstName.substring(0, 1) + lastName).replaceAll('[^A-Za-z0-9]', '');
-        u.Alias = aliasBase.length() > 8 ? aliasBase.substring(0, 8) : aliasBase;
+        // ── 5. Construire l'utilisateur portail
+        String aliasBase = (firstName.substring(0, 1) + lastName)
+                            .replaceAll('[^A-Za-z0-9]', '');
 
         String nick = (firstName + '.' + lastName + '.' + Datetime.now().getTime())
                         .replace(' ', '').toLowerCase();
-        u.CommunityNickname = nick.length() > 40 ? nick.substring(0, 40) : nick;
 
+        User u = new User(
+            FirstName         = firstName,
+            LastName          = lastName,
+            Email             = email,
+            Username          = email,
+            ContactId         = paWithContact.PersonContactId,
+            ProfileId         = COMMUNITY_PROFILE,
+            TimeZoneSidKey    = 'Europe/Paris',
+            LocaleSidKey      = 'fr_FR',
+            EmailEncodingKey  = 'UTF-8',
+            LanguageLocaleKey = 'fr',
+            Alias             = aliasBase.length() > 8
+                                    ? aliasBase.substring(0, 8)
+                                    : aliasBase,
+            CommunityNickname = nick.length() > 40
+                                    ? nick.substring(0, 40)
+                                    : nick
+        );
+
+        // ── 6. Créer l'utilisateur externe
         try {
-            Id newUserId = Site.createExternalUser(u, portalAccount.Id, password);
+            Id newUserId = Site.createExternalUser(u, paWithContact.Id, password);
             if (newUserId == null)
-                throw new AuraHandledException('La creation du compte a echoue.');
+                throw new AuraHandledException('La création du compte a échoué.');
             System.debug('Portal user created: ' + newUserId);
             return 'OK';
+
         } catch (Site.ExternalUserCreateException ex) {
-            delete c;
+            delete personAccount;
             throw new AuraHandledException('Inscription impossible : ' + ex.getMessage());
+
         } catch (Exception ex) {
-            delete c;
+            delete personAccount;
             throw new AuraHandledException('Erreur inattendue : ' + ex.getMessage());
         }
     }
 
+    // ✅ Générateur OTP fiable
     private static String generateOtpCode() {
-        Integer raw = Math.abs(
-            Math.mod((Integer) Math.floor(Math.random() * 1000000), 1000000)
-        );
-        String code = String.valueOf(raw);
-        while (code.length() < OTP_LENGTH) { code = '0' + code; }
+        String code = '';
+        for (Integer i = 0; i < OTP_LENGTH; i++) {
+            Integer digit = Math.mod(
+                Math.abs(Crypto.getRandomInteger()),
+                10
+            );
+            code += String.valueOf(digit);
+        }
         return code;
     }
 }
