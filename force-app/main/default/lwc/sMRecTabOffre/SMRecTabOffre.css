@@ -1,40 +1,84 @@
+/* ── Lignes tableau offres ──────────────────────────────────── */
 .is-closed td {
-    opacity: 0.6;
-    background-color: #fff0f0 !important;
+    color: #999;
+    text-decoration: line-through;
 }
 
 .is-draft td {
-    background-color: #fffbe6 !important;
+    color: #e67e22;
+    font-style: italic;
 }
 
-.nav-tabs {
-    border-bottom: 2px solid #E0E0E0;
+/* ── Badges Statut Candidature ──────────────────────────────── */
+.statut-badge {
+    display      : inline-block;
+    padding      : 3px 10px;
+    border-radius: 12px;
+    font-size    : 12px;
+    font-weight  : bold;
+    text-align   : center;
+    white-space  : nowrap;
 }
 
-.nav-tabs .nav-item {
-    margin-bottom: -2px;
+.statut-soumis {
+    background-color: #e8f4fd;
+    color           : #1a73e8;
+    border          : 1px solid #1a73e8;
 }
 
-.nav-tabs .nav-link {
-    border: none;
-    border-bottom: 2px solid transparent;
-    color: #4A4A4A;
-    padding: 1rem 1.5rem;
-    font-weight: 500;
-    transition: all 0.3s ease;
+.statut-accepte {
+    background-color: #e6f4ea;
+    color           : #2e7d32;
+    border          : 1px solid #2e7d32;
 }
 
-.nav-tabs .nav-link:hover {
-    border-bottom: 2px solid #D04A02;
-    color: #D04A02;
+.statut-refuse {
+    background-color: #fce8e6;
+    color           : #c62828;
+    border          : 1px solid #c62828;
 }
 
-.nav-tabs .nav-link.active {
-    border-bottom: 2px solid #D04A02;
-    color: #D04A02;
-    font-weight: 700;
+/* ── Boutons Accepter / Refuser ─────────────────────────────── */
+.action-buttons {
+    display    : flex;
+    gap        : 6px;
+    align-items: center;
 }
 
-.tab-content {
-    padding: 2rem 0;
+.btn-accepter {
+    background-color: #2e7d32;
+    color           : white;
+    border          : none;
+    border-radius   : 4px;
+    padding         : 4px 10px;
+    font-size       : 12px;
+    font-weight     : bold;
+    cursor          : pointer;
+    transition      : background-color 0.2s;
+}
+
+.btn-accepter:hover:not(:disabled) {
+    background-color: #1b5e20;
+}
+
+.btn-refuser {
+    background-color: #c62828;
+    color           : white;
+    border          : none;
+    border-radius   : 4px;
+    padding         : 4px 10px;
+    font-size       : 12px;
+    font-weight     : bold;
+    cursor          : pointer;
+    transition      : background-color 0.2s;
+}
+
+.btn-refuser:hover:not(:disabled) {
+    background-color: #b71c1c;
+}
+
+.btn-accepter:disabled,
+.btn-refuser:disabled {
+    opacity: 0.5;
+    cursor : not-allowed;
 }

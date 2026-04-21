@@ -13,7 +13,8 @@
         <!-- Body -->
         <div class="slds-p-horizontal_small slds-p-bottom_small">
             <template if:true={hasRows}>
-                <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_fixed-layout">
+                <table class="slds-table slds-table_cell-buffer
+                              slds-table_bordered slds-table_fixed-layout">
                     <thead>
                         <tr class="slds-line-height_reset">
                             <th scope="col">
@@ -43,7 +44,8 @@
                             <tr key={row.Id}>
                                 <td class={row.rowClass}>
                                     <button
-                                        class="slds-button slds-button_reset slds-text-link"
+                                        class="slds-button slds-button_reset
+                                               slds-text-link"
                                         title="Voir candidatures"
                                         data-id={row.Id}
                                         data-title={row.Titre__c}
@@ -79,10 +81,11 @@
                 </div>
             </template>
         </div>
-
     </div>
 
-    <!-- Modale Candidatures -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- Modale Candidatures                                        -->
+    <!-- ══════════════════════════════════════════════════════════ -->
     <template if:true={isModalOpen}>
         <section role="dialog" tabindex="-1" aria-modal="true"
                  class="slds-modal slds-fade-in-open slds-modal_large">
@@ -102,72 +105,120 @@
                         </lightning-icon>
                     </button>
                 </header>
+
                 <div class="slds-modal__content slds-p-around_medium">
                     <template if:true={hasCandidatures}>
-                        <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_fixed-layout">
+                        <table class="slds-table slds-table_cell-buffer
+                                      slds-table_bordered slds-table_fixed-layout">
                             <thead>
                                 <tr class="slds-line-height_reset">
-                                    <th style="width:180px">
+                                    <th style="width:160px">
                                         <div class="slds-truncate">Nom</div>
                                     </th>
-                                    <th style="width:150px">
+                                    <th style="width:120px">
                                         <div class="slds-truncate">Statut</div>
                                     </th>
-                                    <th style="width:180px">
-                                        <div class="slds-truncate">Date candidature</div>
+                                    <th style="width:160px">
+                                        <div class="slds-truncate">
+                                            Date candidature
+                                        </div>
                                     </th>
-                                    <th style="width:100px">
+                                    <th style="width:80px">
                                         <div class="slds-truncate">Score</div>
                                     </th>
-                                    <th style="width:180px">
+                                    <th style="width:120px">
                                         <div class="slds-truncate">CV</div>
+                                    </th>
+                                    <th style="width:220px">
+                                        <div class="slds-truncate">Actions</div>
                                     </th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <template for:each={candidatures} for:item="cand">
                                     <tr key={cand.Id}>
+
+                                        <!-- Nom -->
                                         <td>
                                             <div class="slds-truncate"
                                                  title={cand.candidateName}>
                                                 {cand.candidateName}
                                             </div>
                                         </td>
+
+                                        <!-- Statut Badge -->
                                         <td>
-                                            <div class="slds-truncate"
-                                                 title={cand.Statut__c}>
+                                            <span class={cand.statutClass}>
                                                 {cand.Statut__c}
-                                            </div>
+                                            </span>
                                         </td>
+
+                                        <!-- Date -->
                                         <td>
                                             <div class="slds-truncate">
                                                 {cand.createdDateFmt}
                                             </div>
                                         </td>
+
+                                        <!-- Score -->
                                         <td>
                                             <div class="slds-truncate">
                                                 {cand.Score_Matching__c}
                                             </div>
                                         </td>
+
+                                        <!-- CV -->
                                         <td>
-                                            <!-- ✅ Lien public CV -->
                                             <template if:true={cand.hasCv}>
                                                 <a href={cand.cvUrl}
                                                    target="_blank"
                                                    rel="noopener noreferrer"
                                                    class="slds-text-link">
-                                                     {cand.cvLabel}
+                                                    {cand.cvLabel}
                                                 </a>
                                             </template>
                                             <template if:false={cand.hasCv}>
-                                                <span class="slds-text-color_weak">—</span>
+                                                <span class="slds-text-color_weak">
+                                                    —
+                                                </span>
                                             </template>
                                         </td>
+
+                                        <!-- Actions -->
+                                        <td>
+                                            <template if:true={cand.isSoumis}>
+                                                <div class="action-buttons">
+                                                    <button
+                                                        class="btn-accepter"
+                                                        data-id={cand.Id}
+                                                        data-action="Accepté"
+                                                        onclick={handleCandidatureAction}
+                                                        disabled={cand.isUpdating}>
+                                                        ✅ Accepter
+                                                    </button>
+                                                    <button
+                                                        class="btn-refuser"
+                                                        data-id={cand.Id}
+                                                        data-action="Refusé"
+                                                        onclick={handleCandidatureAction}
+                                                        disabled={cand.isUpdating}>
+                                                        ❌ Refuser
+                                                    </button>
+                                                </div>
+                                            </template>
+                                            <template if:false={cand.isSoumis}>
+                                                <span class="slds-text-color_weak">
+                                                    —
+                                                </span>
+                                            </template>
+                                        </td>
+
                                     </tr>
                                 </template>
                             </tbody>
                         </table>
                     </template>
+
                     <template if:false={hasCandidatures}>
                         <div class="slds-p-around_medium slds-text-color_weak">
                             Aucune candidature pour cette offre.
@@ -179,7 +230,56 @@
         <div class="slds-backdrop slds-backdrop_open"></div>
     </template>
 
-    <!-- Modale Édition -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- Modale Confirmation Accepter/Refuser                       -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <template if:true={isConfirmModalOpen}>
+        <section role="dialog" tabindex="-1" aria-modal="true"
+                 class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <h2 class="slds-text-heading_medium">
+                        {confirmTitle}
+                    </h2>
+                    <button
+                        class="slds-button slds-button_icon slds-modal__close"
+                        title="Fermer"
+                        onclick={closeConfirmModal}>
+                        <lightning-icon
+                            icon-name="utility:close"
+                            alternative-text="Fermer"
+                            size="small">
+                        </lightning-icon>
+                    </button>
+                </header>
+
+                <div class="slds-modal__content slds-p-around_medium
+                            slds-text-align_center">
+                    <p class="slds-text-body_regular slds-m-bottom_medium">
+                        {confirmMessage}
+                    </p>
+                </div>
+
+                <div class="slds-modal__footer">
+                    <lightning-button
+                        label="Annuler"
+                        onclick={closeConfirmModal}>
+                    </lightning-button>
+                    <lightning-button
+                        class="slds-m-left_small"
+                        variant={confirmVariant}
+                        label="Confirmer"
+                        onclick={confirmAction}>
+                    </lightning-button>
+                </div>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- Modale Édition                                             -->
+    <!-- ══════════════════════════════════════════════════════════ -->
     <template if:true={isEditModalOpen}>
         <section role="dialog" tabindex="-1" aria-modal="true"
                  class="slds-modal slds-fade-in-open">
@@ -199,6 +299,7 @@
                         </lightning-icon>
                     </button>
                 </header>
+
                 <div class="slds-modal__content slds-p-around_medium">
                     <lightning-record-edit-form
                         object-api-name="Offre__c"
@@ -210,64 +311,72 @@
                         <lightning-messages></lightning-messages>
 
                         <div class="slds-grid slds-wrap slds-gutters">
-                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                            <div class="slds-col slds-size_1-of-1
+                                        slds-large-size_1-of-2">
                                 <lightning-input-field
                                     field-name="Titre__c"
                                     required>
                                 </lightning-input-field>
                             </div>
-                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                            <div class="slds-col slds-size_1-of-1
+                                        slds-large-size_1-of-2">
                                 <lightning-input-field
                                     field-name="Departement__c"
                                     required>
                                 </lightning-input-field>
                             </div>
-                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                            <div class="slds-col slds-size_1-of-1
+                                        slds-large-size_1-of-2">
                                 <lightning-input-field
                                     field-name="Localisation__c"
                                     required>
                                 </lightning-input-field>
                             </div>
-                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                            <div class="slds-col slds-size_1-of-1
+                                        slds-large-size_1-of-2">
                                 <lightning-input-field
                                     field-name="Deadline__c"
                                     required>
                                 </lightning-input-field>
                             </div>
-                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                            <div class="slds-col slds-size_1-of-1
+                                        slds-large-size_1-of-2">
                                 <lightning-input-field
                                     field-name="Statut__c"
                                     required
                                     onchange={onStatusChange}>
                                 </lightning-input-field>
                             </div>
-                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                            <div class="slds-col slds-size_1-of-1
+                                        slds-large-size_1-of-2">
                                 <lightning-input-field
                                     field-name="TypeOffre__c"
                                     required
                                     onchange={onStatusChange}>
                                 </lightning-input-field>
                             </div>
-                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                            <div class="slds-col slds-size_1-of-1
+                                        slds-large-size_1-of-2">
                                 <lightning-input-field
                                     field-name="Description__c"
                                     required>
                                 </lightning-input-field>
                             </div>
-                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                            <div class="slds-col slds-size_1-of-1
+                                        slds-large-size_1-of-2">
                                 <lightning-input-field
                                     field-name="CompetencesRequises__c"
                                     required>
                                 </lightning-input-field>
                             </div>
-                            <template if:false={isEditClosed}>
-                                <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                            <!-- <template if:false={isEditClosed}>
+                                <div class="slds-col slds-size_1-of-1
+                                            slds-large-size_1-of-2">
                                     <lightning-input-field
-                                        field-name="Visible_aux_candidat__c"
-                                        required>
+                                        field-name="Visible_aux_candidat__c">
                                     </lightning-input-field>
                                 </div>
-                            </template>
+                            </template> -->
                         </div>
 
                         <div class="slds-modal__footer">

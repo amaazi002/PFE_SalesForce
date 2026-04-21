@@ -7,12 +7,10 @@ import getOffer          from '@salesforce/apex/SR_OfferController.getOfferById'
 import createCandidature from '@salesforce/apex/SR_ApplicationController.createCandidature';
 import uploadCv          from '@salesforce/apex/SR_FileUploadController.uploadCv';
 import parseCv           from '@salesforce/apex/SR_HerokuCvParser.parseCv';
+import matchCv           from '@salesforce/apex/SR_MatchingController.matchCv';
 
 export default class SrApplyForm extends NavigationMixin(LightningElement) {
 
-    // ══════════════════════════════════════
-    // PROPRIÉTÉS
-    // ══════════════════════════════════════
     @track offerId            = null;
     @track offerName          = '';
     @track candidatureId      = null;
@@ -49,11 +47,14 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
     // État
     @track isSubmitting       = false;
     @track lastError          = '';
+    @track scoreMatching      = null;
 
-    _pendingFile = null;
+    // ✅ Stocker le JSON du CV parsé pour le matching
+    _pendingFile  = null;
+    _cvParsedData = null;
 
     // ══════════════════════════════════════
-    // GETTERS - NAVIGATION
+    // GETTERS
     // ══════════════════════════════════════
     get isStep1()     { return this.currentStep === 1; }
     get isStep2()     { return this.currentStep === 2; }
@@ -71,9 +72,6 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
         return 'step' + (this.currentStep >= 3 ? ' step--active' : '');
     }
 
-    // ══════════════════════════════════════
-    // GETTERS - OPTIONS
-    // ══════════════════════════════════════
     get genderOptions() {
         return [
             { label: '— Sélectionner —', value: ''      },
@@ -186,8 +184,7 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
         this._pendingFile = file;
         this.cvParsed     = false;
         this.cvParseError = false;
-
-        console.log('✅ Fichier sélectionné:', file.name, '|', this.fileSize, '|', file.type);
+        this._cvParsedData = null; // ✅ Reset CV data
     }
 
     formatSize(bytes) {
@@ -202,14 +199,12 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
     goStep2 = async () => {
         this.lastError = '';
 
-        // ✅ Validation champs obligatoires
         if (!this.firstName?.trim() || !this.lastName?.trim() || !this.email?.trim()) {
             this.lastError = 'Prénom, Nom et Email sont obligatoires.';
             this.toast('Champs requis', this.lastError, 'warning');
             return;
         }
 
-        // ✅ Validation email
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(this.email)) {
             this.lastError = 'Adresse email invalide.';
@@ -217,7 +212,6 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
             return;
         }
 
-        // ✅ Parser le CV si présent et pas encore parsé
         if (this._pendingFile && !this.cvParsed) {
             await this.parseCvWithRender();
         }
@@ -240,7 +234,7 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
     }
 
     // ══════════════════════════════════════
-    // PARSING CV ✅ CORRIGÉ
+    // PARSING CV
     // ══════════════════════════════════════
     parseCvWithRender = () => {
         return new Promise((resolve) => {
@@ -253,29 +247,29 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
             reader.onload = async (event) => {
                 try {
                     const fullBase64 = event.target.result;
-
-                    // ✅ Extraire uniquement la partie base64
-                    let base64Only = fullBase64;
+                    let base64Only   = fullBase64;
                     if (fullBase64 && fullBase64.includes(',')) {
                         base64Only = fullBase64.split(',')[1];
                     }
 
-                    console.log('Fichier:', this._pendingFile.name);
-                    console.log('Type:', this._pendingFile.type);
-                    console.log('Base64 longueur:', base64Only.length);
-
-                    // ✅ Appel Apex
                     const data = await parseCv({
                         fileBase64  : base64Only,
                         fileName    : this._pendingFile.name,
                         contentType : this._pendingFile.type
                     });
 
-                    console.log('Résultat:', JSON.stringify(data));
+                    if (!data) throw new Error('Réponse vide');
 
-                    if (!data) {
-                        throw new Error('Réponse vide');
-                    }
+                    // ✅ Stocker le JSON parsé pour le matching
+                    this._cvParsedData = {
+                        anneesExperience : data.anneesExperience || 0,
+                        competencesTech  : data.competencesTech  || '',
+                        experienceProf   : data.experienceProf   || '',
+                        competencesPerso : data.competencesPerso || '',
+                        dernierDiplome   : data.dernierDiplome   || '',
+                        ecoleUniversite  : data.ecoleUniversite  || '',
+                        anneeObtention   : data.anneeObtention   || null
+                    };
 
                     // ✅ Remplir les champs
                     if (data.anneesExperience != null && Number(data.anneesExperience) > 0) {
@@ -309,7 +303,7 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
                     }
 
                 } catch(e) {
-                    console.error('Erreur:', e?.body?.message || e?.message);
+                    console.error('Erreur parsing:', e?.body?.message || e?.message);
                     this.cvParseError = true;
                     this.lastError    = e?.body?.message || e?.message || 'Erreur inconnue';
                     this.toast('Erreur', this.lastError, 'error');
@@ -337,7 +331,6 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
         this.lastError    = '';
 
         try {
-            // ✅ Validation étape 2
             if (!this.tech?.trim() || !this.xp?.trim() || !this.soft?.trim()) {
                 throw new Error('Renseignez compétences techniques, expérience et compétences personnelles.');
             }
@@ -374,6 +367,23 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
             // ✅ Uploader le CV si présent
             if (this._pendingFile) {
                 await this.uploadFileNow(this._pendingFile);
+            }
+
+            // ✅ Matching CV / Offre
+            if (this._cvParsedData && this.offerId) {
+                try {
+                    const cvJson = JSON.stringify(this._cvParsedData);
+                    const score  = await matchCv({
+                        cvDataJson    : cvJson,
+                        candidatureId : candId,
+                        offreId       : String(this.offerId).trim()
+                    });
+                    this.scoreMatching = score;
+                    console.log('✅ Score matching:', score);
+                } catch(matchErr) {
+                    // ✅ Ne pas bloquer la soumission si matching échoue
+                    console.warn('Matching ignoré:', matchErr?.body?.message || matchErr?.message);
+                }
             }
 
             sessionStorage.removeItem('applyOfferId');

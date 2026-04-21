@@ -1,14 +1,16 @@
 import { LightningElement, track, wire } from 'lwc';
-import { ShowToastEvent } from 'lightning/platformShowToastEvent';
-import { NavigationMixin } from 'lightning/navigation';
-import { getRecord } from 'lightning/uiRecordApi';
+import { ShowToastEvent }                from 'lightning/platformShowToastEvent';
+import { NavigationMixin }               from 'lightning/navigation';
+import { getRecord }                     from 'lightning/uiRecordApi';
 import { getPicklistValuesByRecordType, getObjectInfo } from 'lightning/uiObjectInfoApi';
-import OFFRE_OBJECT from '@salesforce/schema/Offre__c';
-import userId from '@salesforce/user/Id';
+import OFFRE_OBJECT                      from '@salesforce/schema/Offre__c';
+import userId                            from '@salesforce/user/Id';
 
-import getOffres       from '@salesforce/apex/SMRecTabOffreController.getOffres';
-import getCandidatures from '@salesforce/apex/SMRecTabOffreController.getCandidatures';
-import clotureOffre    from '@salesforce/apex/SMRecTabOffreController.clotureOffre';
+import getOffres               from '@salesforce/apex/SMRecTabOffreController.getOffres';
+import getCandidatures         from '@salesforce/apex/SMRecTabOffreController.getCandidatures';
+import clotureOffre            from '@salesforce/apex/SMRecTabOffreController.clotureOffre';
+import updateOffre             from '@salesforce/apex/SMRecTabOffreController.updateOffre';
+import updateStatutCandidature from '@salesforce/apex/SMRecTabOffreController.updateStatutCandidature';
 
 const INVISIBLE_PREFERRED = 'Non';
 
@@ -19,22 +21,28 @@ export default class SMRecTabOffre extends NavigationMixin(LightningElement) {
 
     get isGuest() { return !userId; }
 
-    isModalOpen      = false;
+    isModalOpen          = false;
     modalOfferId;
     modalOfferTitle;
-    isEditModalOpen  = false;
+    isEditModalOpen      = false;
     editRecordId;
     editOfferTitle;
-    isEditClosed     = false;
-    savingAsDraft    = false;
+    isEditClosed         = false;
+    savingAsDraft        = false;
     currentRtId;
     allowedVisibleValues = [];
     defaultRtId;
 
+    // Confirmation modal
+    isConfirmModalOpen  = false;
+    confirmTitle        = '';
+    confirmMessage      = '';
+    confirmVariant      = '';
+    pendingCandidatureId;
+    pendingAction;
+
+    // ── Lifecycle ────────────────────────────────────────────────
     connectedCallback() {
-        console.log('=== SMRecTabOffre ===');
-        console.log('userId:', userId);
-        console.log('isGuest:', this.isGuest);
         this.loadOffres();
     }
 
@@ -44,6 +52,7 @@ export default class SMRecTabOffre extends NavigationMixin(LightningElement) {
         if (error) console.error('wiredObjInfo:', JSON.stringify(error));
     }
 
+    // ── Getters ──────────────────────────────────────────────────
     get hasRows() {
         return Array.isArray(this.rows) && this.rows.length > 0;
     }
@@ -52,13 +61,10 @@ export default class SMRecTabOffre extends NavigationMixin(LightningElement) {
         return Array.isArray(this.candidatures) && this.candidatures.length > 0;
     }
 
+    // ── Charger offres ───────────────────────────────────────────
     async loadOffres() {
         try {
-            console.log('loadOffres START');
             const data = await getOffres();
-            console.log('data:', JSON.stringify(data));
-            console.log('count:', data?.length);
-
             this.rows = (data || []).map(r => {
                 const isHidden =
                     typeof r.Visible_aux_candidat__c === 'boolean'
@@ -83,16 +89,13 @@ export default class SMRecTabOffre extends NavigationMixin(LightningElement) {
                     typeLabel:      r.TypeOffre__c || ''
                 };
             });
-
-            console.log('rows:', this.rows.length);
-
         } catch (e) {
             console.error('ERREUR loadOffres:', JSON.stringify(e));
             this.toast('Erreur', this.err(e), 'error');
         }
     }
 
-    // ── Édition ────────────────────────────────────────────────
+    // ── Édition ──────────────────────────────────────────────────
     handleEdit = (event) => {
         if (this.isGuest) {
             this.toast('Accès refusé', 'Connectez-vous.', 'warning');
@@ -191,9 +194,9 @@ export default class SMRecTabOffre extends NavigationMixin(LightningElement) {
         }
     }
 
-    handleEditSubmit = (event) => {
+    handleEditSubmit = async (event) => {
         event.preventDefault();
-        const form      = event.target;
+
         const fields    = { ...event.detail.fields };
         const newStatus = this.savingAsDraft
             ? 'Brouillon'
@@ -211,18 +214,37 @@ export default class SMRecTabOffre extends NavigationMixin(LightningElement) {
         )) {
             this.applyInvisibleToFields(fields);
         }
-        form.submit(fields);
+
+        try {
+            await updateOffre({
+                offreId:            this.editRecordId,
+                titre:              fields.Titre__c?.value               ?? fields.Titre__c,
+                departement:        fields.Departement__c?.value         ?? fields.Departement__c,
+                localisation:       fields.Localisation__c?.value        ?? fields.Localisation__c,
+                deadline:           fields.Deadline__c?.value            ?? fields.Deadline__c,
+                statut:             fields.Statut__c?.value              ?? fields.Statut__c,
+                typeOffre:          fields.TypeOffre__c?.value           ?? fields.TypeOffre__c,
+                description:        fields.Description__c?.value         ?? fields.Description__c,
+                competences:        fields.CompetencesRequises__c?.value ?? fields.CompetencesRequises__c,
+                visibleAuxCandidat: fields.Visible_aux_candidat__c?.value ?? fields.Visible_aux_candidat__c
+            });
+
+            this.handleEditSuccessManual(fields, newStatus);
+
+        } catch(e) {
+            this.toast('Erreur', this.err(e), 'error');
+        }
     };
 
-    handleEditSuccess = (event) => {
-        const id = event.detail.id;
-        const f  = event.detail.fields || {};
+    handleEditSuccessManual(fields, newStatus) {
+        const f       = fields;
+        const newStat = newStatus ?? (this.savingAsDraft ? 'Brouillon' : '');
 
         this.rows = this.rows.map(r => {
-            if (r.Id !== id) return r;
-            const newStat  = f.Statut__c?.value ??
-                             (this.savingAsDraft ? 'Brouillon' : r.Statut__c);
+            if (r.Id !== this.editRecordId) return r;
+
             const visField = f.Visible_aux_candidat__c?.value
+                          ?? f.Visible_aux_candidat__c
                           ?? r.Visible_aux_candidat__c;
             const isHidden =
                 typeof visField === 'boolean'
@@ -230,14 +252,16 @@ export default class SMRecTabOffre extends NavigationMixin(LightningElement) {
                     : (String(visField || '').toLowerCase() !== 'oui' &&
                        String(visField || '').toLowerCase() !== 'yes' &&
                        String(visField || '').toLowerCase() !== 'true');
+
             const closed = (newStat === 'Clôturée') || isHidden;
             const draft  = (newStat === 'Brouillon');
+
             return {
                 ...r,
-                Titre__c:                f.Titre__c?.value        ?? r.Titre__c,
-                Departement__c:          f.Departement__c?.value  ?? r.Departement__c,
-                Localisation__c:         f.Localisation__c?.value ?? r.Localisation__c,
-                Statut__c:               newStat,
+                Titre__c:                f.Titre__c?.value        ?? f.Titre__c        ?? r.Titre__c,
+                Departement__c:          f.Departement__c?.value  ?? f.Departement__c  ?? r.Departement__c,
+                Localisation__c:         f.Localisation__c?.value ?? f.Localisation__c ?? r.Localisation__c,
+                Statut__c:               newStat || r.Statut__c,
                 Visible_aux_candidat__c: visField,
                 __closed:   closed,
                 __draft:    draft,
@@ -252,13 +276,13 @@ export default class SMRecTabOffre extends NavigationMixin(LightningElement) {
         this.savingAsDraft   = false;
         this.isEditModalOpen = false;
         this.toast('Succès', msg, 'success');
-    };
+    }
 
     handleEditError = (evt) => {
         this.toast('Erreur', evt?.detail?.message || 'Erreur', 'error');
     };
 
-    // ── Clôturer ───────────────────────────────────────────────
+    // ── Clôturer ─────────────────────────────────────────────────
     async handleClose(event) {
         const recordId = event.currentTarget?.dataset?.id
                       || event.target?.dataset?.id;
@@ -287,7 +311,7 @@ export default class SMRecTabOffre extends NavigationMixin(LightningElement) {
         }
     }
 
-    // ── Candidatures ───────────────────────────────────────────
+    // ── Candidatures ─────────────────────────────────────────────
     async openCandidatures(event) {
         if (this.isGuest) {
             this.toast('Accès refusé', 'Connectez-vous.', 'warning');
@@ -307,19 +331,24 @@ export default class SMRecTabOffre extends NavigationMixin(LightningElement) {
 
         try {
             const data = await getCandidatures({ offreId });
-            console.log('candidatures:', JSON.stringify(data));
 
             this.candidatures = (data || []).map(c => {
-                // ✅ URL publique depuis CV_Public_URL__c
-                const cvUrl = c?.CV_Public_URL__c || null;
+                // ✅ Correction : 'Soumise' avec e
+                const statut   = String(c?.Statut__c || '').trim();
+                const isSoumis = statut.toLowerCase() === 'soumise';
+                const cvUrl    = c?.CV_Public_URL__c || null;
+
                 return {
                     ...c,
-                    candidateName:     c?.Candidat__r?.Name || '',
-                    createdDateFmt:    c?.DateDepot__c
+                    candidateName:  c?.Candidat__r?.Name || '',
+                    createdDateFmt: c?.DateDepot__c
                         ? new Date(c.DateDepot__c).toLocaleString('fr-FR') : '',
-                    cvUrl:   cvUrl,
-                    cvLabel: cvUrl ? 'Voir le CV' : '—',
-                    hasCv:   !!cvUrl
+                    cvUrl:       cvUrl,
+                    cvLabel:     cvUrl ? 'Voir le CV' : '—',
+                    hasCv:       !!cvUrl,
+                    isSoumis:    isSoumis,
+                    statutClass: this.getStatutClass(statut),
+                    isUpdating:  false
                 };
             });
 
@@ -331,8 +360,108 @@ export default class SMRecTabOffre extends NavigationMixin(LightningElement) {
         }
     }
 
-    closeModal = () => { this.isModalOpen = false; };
+    closeModal = () => {
+        this.isModalOpen  = false;
+        this.candidatures = [];
+    };
 
+    // ── Actions Accepter / Refuser ───────────────────────────────
+    // ── Clic sur Accepter/Refuser → ouvre confirmation ───────────
+    handleCandidatureAction = (event) => {
+        const candidatureId = event.currentTarget.dataset.id;
+        const action        = event.currentTarget.dataset.action;
+
+        if (!candidatureId || !action) return;
+
+        // Sauvegarder en attente
+        this.pendingCandidatureId = candidatureId;
+        this.pendingAction        = action;
+
+        // Configurer le popup selon l'action
+        if (action === 'Accepté') {
+            this.confirmTitle   = '✅ Accepter la candidature';
+            this.confirmMessage = 'Êtes-vous sûr de vouloir accepter cette candidature ?';
+            this.confirmVariant = 'success';
+        } else {
+            this.confirmTitle   = '❌ Refuser la candidature';
+            this.confirmMessage = 'Êtes-vous sûr de vouloir refuser cette candidature ?';
+            this.confirmVariant = 'destructive';
+        }
+
+        this.isConfirmModalOpen = true;
+    };
+
+    // ── Fermer confirmation ──────────────────────────────────────
+    closeConfirmModal = () => {
+        this.isConfirmModalOpen  = false;
+        this.pendingCandidatureId = null;
+        this.pendingAction        = null;
+    };
+
+    // ── Confirmer l'action ───────────────────────────────────────
+    confirmAction = async () => {
+        const candidatureId = this.pendingCandidatureId;
+        const action        = this.pendingAction;
+
+        // Fermer la modale confirmation
+        this.isConfirmModalOpen = false;
+
+        if (!candidatureId || !action) return;
+
+        // Désactiver boutons pendant update
+        this.candidatures = this.candidatures.map(c =>
+            c.Id === candidatureId
+                ? { ...c, isUpdating: true }
+                : c
+        );
+
+        try {
+            await updateStatutCandidature({
+                candidatureId : candidatureId,
+                statut        : action
+            });
+
+            // ✅ Mettre à jour localement
+            this.candidatures = this.candidatures.map(c => {
+                if (c.Id !== candidatureId) return c;
+                return {
+                    ...c,
+                    Statut__c:   action,
+                    isSoumis:    false,
+                    statutClass: this.getStatutClass(action),
+                    isUpdating:  false
+                };
+            });
+
+            const msg = action === 'Accepté'
+                ? '✅ Candidature acceptée avec succès.'
+                : '❌ Candidature refusée.';
+            this.toast('Succès', msg, 'success');
+
+        } catch (e) {
+            console.error('ERREUR updateStatut:', JSON.stringify(e));
+            this.candidatures = this.candidatures.map(c =>
+                c.Id === candidatureId
+                    ? { ...c, isUpdating: false }
+                    : c
+            );
+            this.toast('Erreur', this.err(e), 'error');
+        } finally {
+            this.pendingCandidatureId = null;
+            this.pendingAction        = null;
+        }
+    };
+
+    // ── Badge couleur statut ─────────────────────────────────────
+    getStatutClass(statut) {
+        const s = String(statut || '').trim().toLowerCase();
+        if (s === 'soumise') return 'statut-badge statut-soumis';
+        if (s === 'accepté') return 'statut-badge statut-accepte';
+        if (s === 'refusé')  return 'statut-badge statut-refuse';
+        return 'statut-badge statut-soumis';
+    }
+
+    // ── Utilitaires ──────────────────────────────────────────────
     toast(title, message, variant) {
         this.dispatchEvent(new ShowToastEvent({ title, message, variant }));
     }
