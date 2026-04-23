@@ -39,7 +39,7 @@
             </template>
             <template if:false={isStep2Done}>2</template>
           </div>
-          <span class="step__label">Compétences</span>
+          <span class="step__label" >Compétences</span>
         </div>
         <div class="step__line"></div>
         <div class={stepClass3}>
@@ -91,23 +91,26 @@
                 onchange={onEmail}
                 required>
               </lightning-input>
-              <lightning-combobox
+              <lightning-combobox 
                 label="Sexe"
                 value={sexe}
                 options={genderOptions}
-                onchange={onSexe}>
+                onchange={onSexe}
+                required>
               </lightning-combobox>
               <lightning-input
                 type="tel"
                 label="Téléphone"
                 value={telephone}
-                onchange={onTelephone}>
+                onchange={onTelephone}
+                required>
               </lightning-input>
               <lightning-input
                 type="date"
                 label="Date de naissance"
                 value={dateNaissance}
-                onchange={onDateNaissance}>
+                onchange={onDateNaissance}
+                required>
               </lightning-input>
             </div>
           </div>
@@ -117,7 +120,7 @@
         <div class="section-card">
           <div class="section-card__header">
             <lightning-icon icon-name="utility:attach" size="small"></lightning-icon>
-            <h2 class="section-title">Déposer votre CV</h2>
+            <h2 class="section-title" >Déposer votre CV <abbr title="required" class="slds-required">*</abbr></h2>
           </div>
           <div class="section-card__body">
 
@@ -237,7 +240,8 @@
                 onchange={onAnneesExperience}
                 min="0"
                 step="1"
-                class="full-width">
+                class="full-width"
+                required>
               </lightning-input>
               <lightning-textarea
                 label="Compétences techniques"
@@ -277,19 +281,22 @@
                 value={niveauEtude}
                 options={niveauEtudeOptions}
                 onchange={onNiveauEtude}
-                class="full-width">
+                class="full-width"
+                required>
               </lightning-combobox>
               <lightning-input
                 type="text"
                 label="Dernier diplôme"
                 value={dernierDiplome}
-                onchange={onDernierDiplome}>
+                onchange={onDernierDiplome}
+                required>
               </lightning-input>
               <lightning-input
                 type="text"
                 label="École / Université"
                 value={ecoleUniversite}
-                onchange={onEcoleUniversite}>
+                onchange={onEcoleUniversite}
+                required>
               </lightning-input>
               <lightning-input
                 type="number"
@@ -298,7 +305,8 @@
                 onchange={onAnneeObtention}
                 min="1950"
                 max="2100"
-                step="1">
+                step="1"
+                required>
               </lightning-input>
             </div>
           </div>

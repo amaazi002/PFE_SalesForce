@@ -212,6 +212,12 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
             return;
         }
 
+        if (!this._pendingFile) {
+            this.lastError = 'Veuillez télécharger votre CV pour continuer.';
+            this.toast('CV obligatoire', this.lastError, 'warning');
+            return;
+        }
+
         if (this._pendingFile && !this.cvParsed) {
             await this.parseCvWithRender();
         }

@@ -471,6 +471,11 @@
     color: #155724;
 }
 
+.slds-required{
+     color:red;
+     text-decoration: none;
+}
+
 .cv-parsed-text {
     margin: 0;
     font-size: 0.9rem;
