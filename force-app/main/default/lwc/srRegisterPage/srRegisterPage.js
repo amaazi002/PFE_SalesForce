@@ -8,42 +8,85 @@ export default class SrRegisterPage extends LightningElement {
     @track firstName = '';
     @track lastName  = '';
     @track email     = '';
-    @track password  = '';
-    @track confirm   = '';
     @track otpCode   = '';
+
+    password = '';
+    confirm  = '';
 
     @track step      = 1;
     @track hasErrors = false;
     @track errorText = '';
     @track isLoading = false;
 
-    // ── Getters ───────────────────────────────────────────────────
-    get isStep1()       { return this.step === 1; }
-    get isStep2()       { return this.step === 2; }
-    get labelContinue() { return this.isLoading ? 'Envoi en cours...' : 'Continuer'; }
-    get labelRegister() { return this.isLoading ? 'Création...'       : 'Créer mon compte'; }
-    get loginUrl() {
-        const p    = window.location.pathname || '/';
-        const i    = p.indexOf('/s/');
-        const base = (i >= 0) ? p.substring(0, i + 3) : (p.endsWith('/') ? p : p + '/');
-        return base + 'login';
+    // ✅ connectedCallback ajouté
+    connectedCallback() {
+        const savedPassword  = sessionStorage.getItem('regPassword');
+        const savedConfirm   = sessionStorage.getItem('regConfirm');
+        const savedFirstName = sessionStorage.getItem('regFirstName');
+        const savedLastName  = sessionStorage.getItem('regLastName');
+        const savedEmail     = sessionStorage.getItem('regEmail');
+
+        if (savedPassword)  this.password  = savedPassword;
+        if (savedConfirm)   this.confirm   = savedConfirm;
+        if (savedFirstName) this.firstName = savedFirstName;
+        if (savedLastName)  this.lastName  = savedLastName;
+        if (savedEmail)     this.email     = savedEmail;
+
+        console.log('=== srRegisterPage connectedCallback ===');
+        console.log('email:', this.email);
     }
 
-    // ── Champs ────────────────────────────────────────────────────
-    onFirst   = (e) => { this.firstName = e.target.value; }
-    onLast    = (e) => { this.lastName  = e.target.value; }
-    onEmail   = (e) => { this.email     = e.target.value; }
-    onPass    = (e) => { this.password  = e.target.value; }
-    onConfirm = (e) => { this.confirm   = e.target.value; }
-    onOtp     = (e) => { this.otpCode   = e.target.value; }
+    get isStep1()       { return this.step === 1; }
+    get isStep2()       { return this.step === 2; }
+    get labelContinue() { 
+        return this.isLoading ? 'Envoi en cours...' : 'Continuer'; 
+    }
+    get labelRegister() { 
+        return this.isLoading ? 'Création...' : 'Créer mon compte'; 
+    }
 
-    // ── Navigation ────────────────────────────────────────────────
-    handleCancel = () => window.location.assign(this.loginUrl);
-    goBack       = () => { this.step = 1; this.clearError(); }
+    get basePath() {
+        const p = window.location.pathname || '/';
+        const i = p.indexOf('/smartrec/');
+        return (i >= 0) 
+            ? p.substring(0, i + '/smartrec/'.length) 
+            : '/smartrec/';
+    }
 
-    // ── Validation ────────────────────────────────────────────────
+    onFirst   = (e) => { this.firstName = e.detail.value; }
+    onLast    = (e) => { this.lastName  = e.detail.value; }
+    onEmail   = (e) => { this.email     = e.detail.value; }
+    onOtp     = (e) => { this.otpCode   = e.detail.value; }
+
+    onPass = (e) => {
+        this.password = e.detail.value;
+        sessionStorage.setItem('regPassword', this.password);
+    }
+
+    onConfirm = (e) => {
+        this.confirm = e.detail.value;
+        sessionStorage.setItem('regConfirm', this.confirm);
+    }
+
+    handleCancel = () => {
+        sessionStorage.removeItem('regPassword');
+        sessionStorage.removeItem('regConfirm');
+        sessionStorage.removeItem('regFirstName');
+        sessionStorage.removeItem('regLastName');
+        sessionStorage.removeItem('regEmail');
+        window.location.href = this.basePath + 'login';
+    }
+
+    goBack = () => {
+        this.step     = 1;
+        this.password = sessionStorage.getItem('regPassword') || '';
+        this.confirm  = sessionStorage.getItem('regConfirm')  || '';
+        this.clearError();
+    }
+
     validateForm() {
         const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
         if (!this.firstName.trim() || !this.lastName.trim() ||
             !this.email.trim() || !this.password || !this.confirm) {
             this.setError('Tous les champs sont obligatoires.');
@@ -65,57 +108,129 @@ export default class SrRegisterPage extends LightningElement {
         return true;
     }
 
-    // ── Étape 1 → envoyer OTP ─────────────────────────────────────
     async handleContinue() {
+        if (this.step === 2) {
+            this.password = sessionStorage.getItem('regPassword') 
+                         || this.password;
+            this.confirm  = sessionStorage.getItem('regConfirm')  
+                         || this.confirm;
+        }
+
         if (!this.validateForm()) return;
+
         this.isLoading = true;
         try {
+            console.log('=== sendOtp ===');
+            console.log('email:', this.email.trim());
+
             await sendOtp({
-                firstName       : this.firstName.trim(),
-                lastName        : this.lastName.trim(),
-                email           : this.email.trim(),
-                password        : this.password,
-                confirmPassword : this.confirm
+                firstName      : this.firstName.trim(),
+                lastName       : this.lastName.trim(),
+                email          : this.email.trim(),
+                password       : this.password,
+                confirmPassword: this.confirm
             });
+
+            sessionStorage.setItem('regPassword',  this.password);
+            sessionStorage.setItem('regConfirm',   this.confirm);
+            sessionStorage.setItem('regFirstName', this.firstName.trim());
+            sessionStorage.setItem('regLastName',  this.lastName.trim());
+            sessionStorage.setItem('regEmail',     this.email.trim());
+
             this.step = 2;
             this.clearError();
+            this.toast('Info', 
+                'Code envoyé à ' + this.email, 
+                'info');
+
         } catch (e) {
+            console.log('ERREUR sendOtp:', JSON.stringify(e));
             this.setError(this.extractMsg(e));
         } finally {
             this.isLoading = false;
         }
     }
 
-    // ── Étape 2 → vérifier OTP ────────────────────────────────────
     async handleRegister() {
         if (!this.otpCode || this.otpCode.trim().length !== 6) {
-            this.setError('Veuillez saisir le code à 6 chiffres reçu par email.');
+            this.setError(
+                'Veuillez saisir le code à 6 chiffres reçu par email.'
+            );
             return;
         }
+
         this.isLoading = true;
         try {
+            const pwd       = sessionStorage.getItem('regPassword') 
+                           || this.password;
+            const confirm   = sessionStorage.getItem('regConfirm')  
+                           || this.confirm;
+            const firstName = sessionStorage.getItem('regFirstName') 
+                           || this.firstName.trim();
+            const lastName  = sessionStorage.getItem('regLastName')  
+                           || this.lastName.trim();
+            const email     = sessionStorage.getItem('regEmail')     
+                           || this.email.trim();
+
+            console.log('=== handleRegister ===');
+            console.log('firstName:', firstName);
+            console.log('email:',     email);
+            console.log('otpCode:',   this.otpCode.trim());
+
             await verifyOtpAndRegister({
-                firstName       : this.firstName.trim(),
-                lastName        : this.lastName.trim(),
-                email           : this.email.trim(),
-                password        : this.password,
-                confirmPassword : this.confirm,   // ✅ AJOUTÉ
-                otpCode         : this.otpCode.trim()
+                firstName      : firstName,
+                lastName       : lastName,
+                email          : email,
+                password       : pwd,
+                confirmPassword: confirm,
+                otpCode        : this.otpCode.trim()
             });
-            this.toast('Succès', 'Compte créé ! Connectez-vous pour postuler.', 'success');
-            window.location.assign(this.loginUrl);
+
+            sessionStorage.removeItem('regPassword');
+            sessionStorage.removeItem('regConfirm');
+            sessionStorage.removeItem('regFirstName');
+            sessionStorage.removeItem('regLastName');
+            sessionStorage.removeItem('regEmail');
+
+            this.toast(
+                'Succès', 
+                'Compte créé ! Connectez-vous pour postuler.', 
+                'success'
+            );
+
+            setTimeout(() => {
+                window.location.href = this.basePath + 'login';
+            }, 2000);
+
         } catch (e) {
+            console.log('ERREUR verifyOtp:', JSON.stringify(e));
             this.setError(this.extractMsg(e));
         } finally {
             this.isLoading = false;
         }
     }
 
-    // ── Helpers ───────────────────────────────────────────────────
-    setError(msg) { this.hasErrors = true;  this.errorText = msg; }
-    clearError()  { this.hasErrors = false; this.errorText = '';  }
-    extractMsg(e) { return e?.body?.message || e?.message || 'Une erreur est survenue.'; }
+    setError(msg)  { 
+        this.hasErrors = true;  
+        this.errorText = msg; 
+    }
+
+    clearError() { 
+        this.hasErrors = false; 
+        this.errorText = '';  
+    }
+
+    extractMsg(e) {
+        console.log('extractMsg:', JSON.stringify(e));
+        return e?.body?.message
+            || e?.body?.output?.errors?.[0]?.message
+            || e?.message
+            || 'Une erreur est survenue.';
+    }
+
     toast(title, message, variant) {
-        this.dispatchEvent(new ShowToastEvent({ title, message, variant }));
+        this.dispatchEvent(
+            new ShowToastEvent({ title, message, variant })
+        );
     }
 }

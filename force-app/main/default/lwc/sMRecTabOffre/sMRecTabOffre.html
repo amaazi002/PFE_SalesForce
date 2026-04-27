@@ -1,218 +1,200 @@
 <template>
-    <div class="slds-card">
+    <div class="rec-container">
 
-        <!-- Header -->
-        <div class="slds-card__header slds-grid slds-p-around_small">
-            <header class="slds-media slds-media_center slds-has-flexi-truncate">
-                <div class="slds-media__body">
-                    <h2 class="slds-card__header-title slds-truncate">Offres</h2>
-                </div>
-            </header>
+        <div class="rec-header">
+            <h1 class="rec-title">Offres d'emploi</h1>
         </div>
 
-        <!-- Body -->
-        <div class="slds-p-horizontal_small slds-p-bottom_small">
-            <template if:true={hasRows}>
-                <table class="slds-table slds-table_cell-buffer
-                              slds-table_bordered slds-table_fixed-layout">
-                    <thead>
-                        <tr class="slds-line-height_reset">
-                            <th scope="col">
-                                <div class="slds-truncate">Titre</div>
-                            </th>
-                            <th scope="col">
-                                <div class="slds-truncate">Date d'ouverture</div>
-                            </th>
-                            <th scope="col">
-                                <div class="slds-truncate">Date de fermeture</div>
-                            </th>
-                            <th scope="col">
-                                <div class="slds-truncate">Statut</div>
-                            </th>
-                            <th scope="col">
-                                <div class="slds-truncate">Type</div>
-                            </th>
-                            <template if:false={isGuest}>
-                                <th scope="col" style="width:200px">
-                                    <div class="slds-truncate">Actions</div>
-                                </th>
-                            </template>
-                        </tr>
-                    </thead>
-                    <tbody>
+        <div class="rec-table-wrapper">
+            <table class="rec-table">
+                <thead>
+                    <tr>
+                        <th>Offre</th>
+                        <th>New Submissions</th>
+                        <th>En attente d'entretien</th>
+                        <th>Entretien planifié</th>
+                        <th>Total candidats</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template if:true={hasRows}>
                         <template for:each={rows} for:item="row">
-                            <tr key={row.Id}>
-                                <td class={row.rowClass}>
+                            <tr key={row.offreId}>
+                                <td>
+                                    <div class="offre-titre">{row.offre.Titre__c}</div>
+                                    <div class="offre-meta">
+                                        <span>{row.deadlineFmt}</span>
+                                        <span class="sep">·</span>
+                                        <span>{row.offre.Localisation__c}</span>
+                                        <span class="sep">·</span>
+                                        <span class={row.statutClass}>
+                                            {row.offre.Statut__c}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge badge-new">
+                                        {row.newSubmissions}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge badge-wait">
+                                        {row.enAttenteEntretien}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge badge-planned">
+                                        {row.entretienPlanifie}
+                                    </span>
+                                </td>
+                                <td>
                                     <button
-                                        class="slds-button slds-button_reset
-                                               slds-text-link"
-                                        title="Voir candidatures"
-                                        data-id={row.Id}
-                                        data-title={row.Titre__c}
-                                        onclick={openCandidatures}>
-                                        {row.Titre__c}
+                                        class="total-link"
+                                        data-id={row.offreId}
+                                        data-titre={row.offre.Titre__c}
+                                        onclick={handleTotalClick}>
+                                        {row.totalCandidats}
                                     </button>
                                 </td>
-                                <td class={row.rowClass}>{row.createdDateFmt}</td>
-                                <td class={row.rowClass}>{row.deadlineFmt}</td>
-                                <td class={row.rowClass}>{row.Statut__c}</td>
-                                <td class={row.rowClass}>{row.typeLabel}</td>
-                                <template if:false={isGuest}>
-                                    <td>
-                                        <div class="slds-button_group" role="group">
-                                            <lightning-button
-                                                label="Modifier"
-                                                variant="brand-outline"
-                                                data-id={row.Id}
-                                                onclick={handleEdit}>
-                                            </lightning-button>
-                                        </div>
-                                    </td>
-                                </template>
+                                <td>
+                                    <button
+                                        class="btn-edit"
+                                        data-id={row.offreId}
+                                        onclick={handleEdit}>
+                                        Modifier
+                                    </button>
+                                </td>
                             </tr>
                         </template>
-                    </tbody>
-                </table>
-            </template>
-
-            <template if:false={hasRows}>
-                <div class="slds-p-around_medium slds-text-color_weak">
-                    Aucune offre trouvée.
-                </div>
-            </template>
+                    </template>
+                    <template if:false={hasRows}>
+                        <tr>
+                            <td colspan="6" class="empty-state">
+                                Aucune offre trouvée.
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
         </div>
-    </div>
 
-    <!-- ══════════════════════════════════════════════════════════ -->
-    <!-- Modale Candidatures                                        -->
-    <!-- ══════════════════════════════════════════════════════════ -->
-    <template if:true={isModalOpen}>
-        <section role="dialog" tabindex="-1" aria-modal="true"
-                 class="slds-modal slds-fade-in-open slds-modal_large">
-            <div class="slds-modal__container">
-                <header class="slds-modal__header">
-                    <h2 class="slds-text-heading_medium">
-                        Candidatures — {modalOfferTitle}
-                    </h2>
-                    <button
-                        class="slds-button slds-button_icon slds-modal__close"
-                        title="Fermer"
-                        onclick={closeModal}>
-                        <lightning-icon
-                            icon-name="utility:close"
-                            alternative-text="Fermer"
-                            size="medium">
-                        </lightning-icon>
-                    </button>
-                </header>
+        <!-- ══════════════════════════════════════════════ -->
+        <!-- Modale Candidatures                            -->
+        <!-- ══════════════════════════════════════════════ -->
+        <template if:true={isModalOpen}>
+            <div class="modal-backdrop" onclick={closeModal}></div>
+            <div class="modal-box modal-large">
+                <div class="modal-header">
+                    <h2>Candidatures — {modalOfferTitle}</h2>
+                    <button class="modal-close" onclick={closeModal}>✕</button>
+                </div>
+                <div class="modal-body">
 
-                <div class="slds-modal__content slds-p-around_medium">
+                    <div class="modal-filters">
+                        <input
+                            type="text"
+                            class="search-input"
+                            placeholder="Rechercher par nom..."
+                            value={searchTerm}
+                            oninput={handleSearch}
+                        />
+                        <div class="filter-buttons">
+                            <button
+                                class={btnEntretienClass}
+                                onclick={handleFilterEntretien}>
+                                Entretien planifié
+                            </button>
+                            <button
+                                class={btnSansEntretienClass}
+                                onclick={handleFilterSansEntretien}>
+                                Sans entretien
+                            </button>
+                            <button
+                                class={btnNouveauxClass}
+                                onclick={handleFilterNouveaux}>
+                                Nouveaux
+                            </button>
+                        </div>
+                    </div>
+
+                    <template if:true={hasSelected}>
+                        <div class="candidats-selected-bar">
+                            <span>{selectedCount} candidat(s) sélectionné(s)</span>
+                            <button
+                                class="btn-action-group"
+                                onclick={handleOpenActionModal}>
+                                Action groupée
+                            </button>
+                        </div>
+                    </template>
+
                     <template if:true={hasCandidatures}>
-                        <table class="slds-table slds-table_cell-buffer
-                                      slds-table_bordered slds-table_fixed-layout">
+                        <table class="rec-table">
                             <thead>
-                                <tr class="slds-line-height_reset">
-                                    <th style="width:160px">
-                                        <div class="slds-truncate">Nom</div>
+                                <tr>
+                                    <th style="width:40px">
+                                        <input
+                                            type="checkbox"
+                                            checked={allSelected}
+                                            onchange={handleSelectAll}
+                                        />
                                     </th>
-                                    <th style="width:120px">
-                                        <div class="slds-truncate">Statut</div>
-                                    </th>
-                                    <th style="width:160px">
-                                        <div class="slds-truncate">
-                                            Date candidature
-                                        </div>
-                                    </th>
-                                    <th style="width:80px">
-                                        <div class="slds-truncate">Score</div>
-                                    </th>
-                                    <th style="width:120px">
-                                        <div class="slds-truncate">CV</div>
-                                    </th>
-                                    <th style="width:220px">
-                                        <div class="slds-truncate">Actions</div>
-                                    </th>
+                                    <th>Nom du candidat</th>
+                                    <th>Statut</th>
+                                    <th>Score</th>
+                                    <th>CV</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <template for:each={candidatures} for:item="cand">
+                                <template for:each={filteredCandidatures} for:item="cand">
                                     <tr key={cand.Id}>
-
-                                        <!-- Nom -->
                                         <td>
-                                            <div class="slds-truncate"
-                                                 title={cand.candidateName}>
-                                                {cand.candidateName}
-                                            </div>
+                                            <input
+                                                type="checkbox"
+                                                checked={cand.isSelected}
+                                                data-id={cand.Id}
+                                                onchange={handleSelectOne}
+                                            />
                                         </td>
-
-                                        <!-- Statut Badge -->
+                                        <td>
+                                            <button
+                                                class="candidat-name-link"
+                                                data-id={cand.Id}
+                                                onclick={handleCandidatClick}>
+                                                {cand.candidateName}
+                                            </button>
+                                        </td>
                                         <td>
                                             <span class={cand.statutClass}>
                                                 {cand.Statut__c}
                                             </span>
                                         </td>
-
-                                        <!-- Date -->
                                         <td>
-                                            <div class="slds-truncate">
-                                                {cand.createdDateFmt}
+                                            <div class="score-bar-wrap">
+                                                <div class="score-bar-bg">
+                                                    <div
+                                                        class={cand.scoreBarClass}
+                                                        style={cand.scoreBarStyle}>
+                                                    </div>
+                                                </div>
+                                                <span class="score-label">
+                                                    {cand.Score_Matching__c}%
+                                                </span>
                                             </div>
                                         </td>
-
-                                        <!-- Score -->
-                                        <td>
-                                            <div class="slds-truncate">
-                                                {cand.Score_Matching__c}
-                                            </div>
-                                        </td>
-
-                                        <!-- CV -->
                                         <td>
                                             <template if:true={cand.hasCv}>
-                                                <a href={cand.cvUrl}
+                                                <a href={cand.CV_Public_URL__c}
                                                    target="_blank"
-                                                   rel="noopener noreferrer"
-                                                   class="slds-text-link">
-                                                    {cand.cvLabel}
+                                                   class="cv-link">
+                                                    Voir CV
                                                 </a>
                                             </template>
                                             <template if:false={cand.hasCv}>
-                                                <span class="slds-text-color_weak">
-                                                    —
-                                                </span>
+                                                <span class="text-muted">—</span>
                                             </template>
                                         </td>
-
-                                        <!-- Actions -->
-                                        <td>
-                                            <template if:true={cand.isSoumis}>
-                                                <div class="action-buttons">
-                                                    <button
-                                                        class="btn-accepter"
-                                                        data-id={cand.Id}
-                                                        data-action="Accepté"
-                                                        onclick={handleCandidatureAction}
-                                                        disabled={cand.isUpdating}>
-                                                        ✅ Accepter
-                                                    </button>
-                                                    <button
-                                                        class="btn-refuser"
-                                                        data-id={cand.Id}
-                                                        data-action="Refusé"
-                                                        onclick={handleCandidatureAction}
-                                                        disabled={cand.isUpdating}>
-                                                        ❌ Refuser
-                                                    </button>
-                                                </div>
-                                            </template>
-                                            <template if:false={cand.isSoumis}>
-                                                <span class="slds-text-color_weak">
-                                                    —
-                                                </span>
-                                            </template>
-                                        </td>
-
                                     </tr>
                                 </template>
                             </tbody>
@@ -220,87 +202,93 @@
                     </template>
 
                     <template if:false={hasCandidatures}>
-                        <div class="slds-p-around_medium slds-text-color_weak">
-                            Aucune candidature pour cette offre.
-                        </div>
+                        <div class="empty-state">Aucune candidature.</div>
                     </template>
                 </div>
             </div>
-        </section>
-        <div class="slds-backdrop slds-backdrop_open"></div>
-    </template>
+        </template>
 
-    <!-- ══════════════════════════════════════════════════════════ -->
-    <!-- Modale Confirmation Accepter/Refuser                       -->
-    <!-- ══════════════════════════════════════════════════════════ -->
-    <template if:true={isConfirmModalOpen}>
-        <section role="dialog" tabindex="-1" aria-modal="true"
-                 class="slds-modal slds-fade-in-open">
-            <div class="slds-modal__container">
-                <header class="slds-modal__header">
-                    <h2 class="slds-text-heading_medium">
-                        {confirmTitle}
-                    </h2>
-                    <button
-                        class="slds-button slds-button_icon slds-modal__close"
-                        title="Fermer"
-                        onclick={closeConfirmModal}>
-                        <lightning-icon
-                            icon-name="utility:close"
-                            alternative-text="Fermer"
-                            size="small">
-                        </lightning-icon>
-                    </button>
-                </header>
-
-                <div class="slds-modal__content slds-p-around_medium
-                            slds-text-align_center">
-                    <p class="slds-text-body_regular slds-m-bottom_medium">
-                        {confirmMessage}
-                    </p>
+        <!-- ══════════════════════════════════════════════ -->
+        <!-- Modale Action Groupée                          -->
+        <!-- ══════════════════════════════════════════════ -->
+        <template if:true={isActionModalOpen}>
+            <div class="modal-backdrop" onclick={closeActionModal}></div>
+            <div class="modal-box modal-large">
+                <div class="modal-header">
+                    <h2>Action groupée</h2>
+                    <button class="modal-close" onclick={closeActionModal}>✕</button>
                 </div>
-
-                <div class="slds-modal__footer">
-                    <lightning-button
-                        label="Annuler"
-                        onclick={closeConfirmModal}>
-                    </lightning-button>
-                    <lightning-button
-                        class="slds-m-left_small"
-                        variant={confirmVariant}
-                        label="Confirmer"
-                        onclick={confirmAction}>
-                    </lightning-button>
+                <div class="modal-body">
+                    <table class="rec-table">
+                        <thead>
+                            <tr>
+                                <th>Nom du candidat</th>
+                                <th>Statut actuel</th>
+                                <th>Nouveau statut</th>
+                                <th>Décision</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template for:each={selectedCandidatures} for:item="cand">
+                                <tr key={cand.Id}>
+                                    <td>{cand.candidateName}</td>
+                                    <td>
+                                        <span class={cand.statutClass}>
+                                            {cand.Statut__c}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <select
+                                            class="select-statut"
+                                            data-id={cand.Id}
+                                            onchange={handleNewStatutChange}>
+                                            <option value="">-- Choisir --</option>
+                                            <option value="Soumise">Soumise</option>
+                                            <option value="En entretien">
+                                                En entretien
+                                            </option>
+                                            <option value="Sans entretien">
+                                                Sans entretien
+                                            </option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select
+                                            class="select-decision"
+                                            data-id={cand.Id}
+                                            onchange={handleDecisionChange}>
+                                            <option value="">-- Choisir --</option>
+                                            <option value="Accepté">Accepté</option>
+                                            <option value="Refusé">Refusé</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel" onclick={closeActionModal}>
+                        Annuler
+                    </button>
+                    <button class="btn-save" onclick={handleSaveActions}>
+                        Enregistrer
+                    </button>
                 </div>
             </div>
-        </section>
-        <div class="slds-backdrop slds-backdrop_open"></div>
-    </template>
+        </template>
 
-    <!-- ══════════════════════════════════════════════════════════ -->
-    <!-- Modale Édition                                             -->
-    <!-- ══════════════════════════════════════════════════════════ -->
-    <template if:true={isEditModalOpen}>
-        <section role="dialog" tabindex="-1" aria-modal="true"
-                 class="slds-modal slds-fade-in-open">
-            <div class="slds-modal__container">
-                <header class="slds-modal__header">
-                    <h2 class="slds-text-heading_medium">
-                        Modifier — {editOfferTitle}
-                    </h2>
-                    <button
-                        class="slds-button slds-button_icon slds-modal__close"
-                        title="Fermer"
-                        onclick={closeEditModal}>
-                        <lightning-icon
-                            icon-name="utility:close"
-                            alternative-text="Fermer"
-                            size="small">
-                        </lightning-icon>
-                    </button>
-                </header>
-
-                <div class="slds-modal__content slds-p-around_medium">
+        <!-- ══════════════════════════════════════════════ -->
+        <!-- Modale Edition Offre                           -->
+        <!-- ══════════════════════════════════════════════ -->
+        <template if:true={isEditModalOpen}>
+            <div class="modal-backdrop" onclick={closeEditModal}></div>
+            <div class="modal-box">
+                <div class="modal-header">
+                    <h2>Modifier — {editOfferTitle}</h2>
+                    <button class="modal-close" onclick={closeEditModal}>✕</button>
+                </div>
+                <div class="modal-body">
                     <lightning-record-edit-form
                         object-api-name="Offre__c"
                         record-id={editRecordId}
@@ -310,93 +298,47 @@
 
                         <lightning-messages></lightning-messages>
 
-                        <div class="slds-grid slds-wrap slds-gutters">
-                            <div class="slds-col slds-size_1-of-1
-                                        slds-large-size_1-of-2">
-                                <lightning-input-field
-                                    field-name="Titre__c"
-                                    required>
-                                </lightning-input-field>
-                            </div>
-                            <div class="slds-col slds-size_1-of-1
-                                        slds-large-size_1-of-2">
-                                <lightning-input-field
-                                    field-name="Departement__c"
-                                    required>
-                                </lightning-input-field>
-                            </div>
-                            <div class="slds-col slds-size_1-of-1
-                                        slds-large-size_1-of-2">
-                                <lightning-input-field
-                                    field-name="Localisation__c"
-                                    required>
-                                </lightning-input-field>
-                            </div>
-                            <div class="slds-col slds-size_1-of-1
-                                        slds-large-size_1-of-2">
-                                <lightning-input-field
-                                    field-name="Deadline__c"
-                                    required>
-                                </lightning-input-field>
-                            </div>
-                            <div class="slds-col slds-size_1-of-1
-                                        slds-large-size_1-of-2">
-                                <lightning-input-field
-                                    field-name="Statut__c"
-                                    required
-                                    onchange={onStatusChange}>
-                                </lightning-input-field>
-                            </div>
-                            <div class="slds-col slds-size_1-of-1
-                                        slds-large-size_1-of-2">
-                                <lightning-input-field
-                                    field-name="TypeOffre__c"
-                                    required
-                                    onchange={onStatusChange}>
-                                </lightning-input-field>
-                            </div>
-                            <div class="slds-col slds-size_1-of-1
-                                        slds-large-size_1-of-2">
-                                <lightning-input-field
-                                    field-name="Description__c"
-                                    required>
-                                </lightning-input-field>
-                            </div>
-                            <div class="slds-col slds-size_1-of-1
-                                        slds-large-size_1-of-2">
-                                <lightning-input-field
-                                    field-name="CompetencesRequises__c"
-                                    required>
-                                </lightning-input-field>
-                            </div>
-                            <!-- <template if:false={isEditClosed}>
-                                <div class="slds-col slds-size_1-of-1
-                                            slds-large-size_1-of-2">
-                                    <lightning-input-field
-                                        field-name="Visible_aux_candidat__c">
-                                    </lightning-input-field>
-                                </div>
-                            </template> -->
+                        <div class="form-grid">
+                            <lightning-input-field
+                                field-name="Titre__c" required>
+                            </lightning-input-field>
+                            <lightning-input-field
+                                field-name="Departement__c" required>
+                            </lightning-input-field>
+                            <lightning-input-field
+                                field-name="Localisation__c" required>
+                            </lightning-input-field>
+                            <lightning-input-field
+                                field-name="Deadline__c" required>
+                            </lightning-input-field>
+                            <lightning-input-field
+                                field-name="Statut__c" required>
+                            </lightning-input-field>
+                            <lightning-input-field
+                                field-name="TypeOffre__c" required>
+                            </lightning-input-field>
+                            <lightning-input-field
+                                field-name="Description__c">
+                            </lightning-input-field>
+                            <lightning-input-field
+                                field-name="CompetencesRequises__c">
+                            </lightning-input-field>
                         </div>
 
-                        <div class="slds-modal__footer">
+                        <div class="modal-footer">
+                            <button class="btn-cancel" onclick={closeEditModal}>
+                                Annuler
+                            </button>
                             <lightning-button
-                                label="Annuler"
-                                onclick={closeEditModal}>
-                            </lightning-button>
-                            <lightning-button
-                                class="slds-m-left_small"
                                 variant="brand"
                                 label="Enregistrer"
-                                type="submit"
-                                disabled={saveDisabled}>
+                                type="submit">
                             </lightning-button>
                         </div>
                     </lightning-record-edit-form>
                 </div>
             </div>
-        </section>
-        <div class="slds-backdrop slds-backdrop_open"></div>
-    </template>
+        </template>
 
+    </div>
 </template>

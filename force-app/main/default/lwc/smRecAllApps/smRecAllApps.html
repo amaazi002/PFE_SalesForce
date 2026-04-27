@@ -1,0 +1,239 @@
+<template>
+    <div class="rec-container">
+
+        <div class="rec-header">
+            <button class="btn-back" onclick={handleBack}>← Retour</button>
+            <h1 class="rec-title">
+                Toutes les candidatures
+                <template if:true={offreTitre}>
+                    — {offreTitre}
+                </template>
+            </h1>
+        </div>
+
+        <div class="filters-bar">
+            <input
+                type="text"
+                class="search-input"
+                placeholder="Rechercher par nom..."
+                value={searchTerm}
+                oninput={handleSearch}
+            />
+            <div class="filter-buttons">
+                <button
+                    class={btnTousClass}
+                    data-filter="Tous"
+                    onclick={handleFilterStatut}>
+                    Tous
+                </button>
+                <button
+                    class={btnSoumiseClass}
+                    data-filter="Soumise"
+                    onclick={handleFilterStatut}>
+                    Soumise
+                </button>
+                <button
+                    class={btnEntretienClass}
+                    data-filter="entretien"
+                    onclick={handleFilterStatut}>
+                    En entretien
+                </button>
+                <button
+                    class={btnSansEntretienClass}
+                    data-filter="sansEntretien"
+                    onclick={handleFilterStatut}>
+                    Sans entretien
+                </button>
+            </div>
+        </div>
+
+        <template if:true={hasSelected}>
+            <div class="candidats-selected-bar">
+                <span>{selectedCount} candidat(s) sélectionné(s)</span>
+                <button
+                    class="btn-action-group"
+                    onclick={handleOpenActionModal}>
+                    Action groupée
+                </button>
+            </div>
+        </template>
+
+        <div class="rec-table-wrapper">
+            <template if:true={hasCandidatures}>
+                <table class="rec-table">
+                    <thead>
+                        <tr>
+                            <th style="width:40px">
+                                <input
+                                    type="checkbox"
+                                    checked={allSelected}
+                                    onchange={handleSelectAll}
+                                />
+                            </th>
+                            <th>Nom du candidat</th>
+                            <th>Offre</th>
+                            <th>Statut</th>
+                            <th>Score</th>
+                            <th>Date candidature</th>
+                            <th>CV</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template for:each={candidatures} for:item="cand">
+                            <tr key={cand.Id}>
+                                <td>
+                                    <input
+                                        type="checkbox"
+                                        checked={cand.isSelected}
+                                        data-id={cand.Id}
+                                        onchange={handleSelectOne}
+                                    />
+                                </td>
+                                <td>
+                                    <button
+                                        class="candidat-name-link"
+                                        data-id={cand.Id}
+                                        onclick={handleCandidatClick}>
+                                        {cand.candidateName}
+                                    </button>
+                                </td>
+                                <td>{cand.offreTitre}</td>
+                                <td>
+                                    <span class={cand.statutClass}>
+                                        {cand.Statut__c}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="score-bar-wrap">
+                                        <div class="score-bar-bg">
+                                            <div
+                                                class={cand.scoreBarClass}
+                                                style={cand.scoreBarStyle}>
+                                            </div>
+                                        </div>
+                                        <span class="score-label">
+                                            {cand.Score_Matching__c}%
+                                        </span>
+                                    </div>
+                                </td>
+                                <td>{cand.dateFmt}</td>
+                                <td>
+                                    <template if:true={cand.hasCv}>
+                                        <a
+                                            href={cand.CV_Public_URL__c}
+                                            target="_blank"
+                                            class="cv-link">
+                                            Voir CV
+                                        </a>
+                                    </template>
+                                    <template if:false={cand.hasCv}>
+                                        <span class="text-muted">—</span>
+                                    </template>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </template>
+
+            <template if:false={hasCandidatures}>
+                <div class="empty-state">
+                    Aucune candidature trouvée.
+                </div>
+            </template>
+        </div>
+
+        <!-- ══════════════════════════════════════════════ -->
+        <!-- Modale Action Groupée                          -->
+        <!-- ══════════════════════════════════════════════ -->
+        <template if:true={isActionModalOpen}>
+            <div class="modal-backdrop" onclick={closeActionModal}></div>
+            <div class="modal-box modal-large">
+                <div class="modal-header">
+                    <h2>Action groupée</h2>
+                    <button
+                        class="modal-close"
+                        onclick={closeActionModal}>✕
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <table class="rec-table">
+                        <thead>
+                            <tr>
+                                <th>Nom du candidat</th>
+                                <th>Statut actuel</th>
+                                <th>Nouveau statut</th>
+                                <th>Décision</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template
+                                for:each={selectedCandidatures}
+                                for:item="cand">
+                                <tr key={cand.Id}>
+                                    <td>{cand.candidateName}</td>
+                                    <td>
+                                        <span class={cand.statutClass}>
+                                            {cand.Statut__c}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <select
+                                            class="select-statut"
+                                            data-id={cand.Id}
+                                            onchange={handleNewStatutChange}>
+                                            <option value="">
+                                                -- Choisir --
+                                            </option>
+                                            <template
+                                                for:each={statutOptions}
+                                                for:item="opt">
+                                                <option
+                                                    key={opt.value}
+                                                    value={opt.value}>
+                                                    {opt.label}
+                                                </option>
+                                            </template>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select
+                                            class="select-decision"
+                                            data-id={cand.Id}
+                                            onchange={handleDecisionChange}>
+                                            <option value="">
+                                                -- Choisir --
+                                            </option>
+                                            <template
+                                                for:each={decisionOptions}
+                                                for:item="opt">
+                                                <option
+                                                    key={opt.value}
+                                                    value={opt.value}>
+                                                    {opt.label}
+                                                </option>
+                                            </template>
+                                        </select>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button
+                        class="btn-cancel"
+                        onclick={closeActionModal}>
+                        Annuler
+                    </button>
+                    <button
+                        class="btn-save"
+                        onclick={handleSaveActions}>
+                        Enregistrer
+                    </button>
+                </div>
+            </div>
+        </template>
+
+    </div>
+</template>

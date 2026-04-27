@@ -2,11 +2,11 @@ public without sharing class SR_SelfRegistrationController {
 
     private static final Integer OTP_EXPIRY_MINUTES = 10;
     private static final Integer OTP_LENGTH         = 6;
-    private static final String  PORTAL_ACCOUNT     = 'Candidats Portail';
-    private static final Id      COMMUNITY_PROFILE  = '00efj000007pXw3AAE';
 
-    // === ETAPE 1 : Envoyer un OTP ===
-    @AuraEnabled
+    // ═══════════════════════════════════════════════════════════
+    // ETAPE 1 : Envoyer un OTP
+    // ═══════════════════════════════════════════════════════════
+    @AuraEnabled(cacheable=false)
     public static void sendOtp(
             String firstName,
             String lastName,
@@ -14,51 +14,58 @@ public without sharing class SR_SelfRegistrationController {
             String password,
             String confirmPassword) {
 
-        if (String.isBlank(firstName) || String.isBlank(lastName) || String.isBlank(email))
-            throw new AuraHandledException('Nom, prenom et email sont obligatoires.');
+        if (String.isBlank(firstName) || String.isBlank(lastName)
+            || String.isBlank(email))
+            throw new AuraHandledException(
+                'Nom, prenom et email sont obligatoires.');
+
         if (String.isBlank(password) || String.isBlank(confirmPassword))
-            throw new AuraHandledException('Le mot de passe est obligatoire.');
+            throw new AuraHandledException(
+                'Le mot de passe est obligatoire.');
+
         if (password != confirmPassword)
-            throw new AuraHandledException('Les mots de passe ne correspondent pas.');
+            throw new AuraHandledException(
+                'Les mots de passe ne correspondent pas.');
+
         if (password.length() < 8)
-            throw new AuraHandledException('Mot de passe trop court (min 8 caracteres).');
+            throw new AuraHandledException(
+                'Mot de passe trop court (min 8 caracteres).');
 
         String cleanEmail = email.trim().toLowerCase();
 
-        List<Contact> existing = [
-            SELECT Id FROM Contact
-            WHERE Email = :cleanEmail
+        // ✅ Vérifier doublon User
+        List<User> existingUsers = [
+            SELECT Id FROM User
+            WHERE Email    = :cleanEmail
+            AND   IsActive = true
             LIMIT 1
         ];
-        if (!existing.isEmpty())
-            throw new AuraHandledException('Un compte existe deja avec cet email.');
+        if (!existingUsers.isEmpty())
+            throw new AuraHandledException(
+                'Un compte existe deja avec cet email.');
 
-        // ✅ Supprimer les anciens OTP
-        List<SR_OTP__c> oldOtps = [
-            SELECT Id FROM SR_OTP__c
-            WHERE Email__c = :cleanEmail
-        ];
-        if (!oldOtps.isEmpty()) delete oldOtps;
+        // ✅ Supprimer les anciens OTP via SR_OTP_Manager
+        SR_OTP_Manager.deleteOldOtps(cleanEmail);
 
-        // ✅ Générer le code
+        // ✅ Générer et insérer l'OTP
         String code = generateOtpCode();
-        System.debug('OTP generated for ' + cleanEmail + ' : ' + code);
 
-        // ✅ Insérer l'OTP
         SR_OTP__c otp = new SR_OTP__c(
             Email__c = cleanEmail,
             Code__c  = code
         );
-        insert otp;
 
-        // ✅ Envoyer l'email DIRECTEMENT ici (plus fiable que le trigger)
+        // ✅ Insérer via SR_OTP_Manager
+        SR_OTP_Manager.insertOtp(otp);
+
+        // ✅ Envoyer l'email
         SR_OTP_EmailHelper.sendOtpEmail(cleanEmail, code);
-
-        System.debug('OTP inserted: ' + otp.Id + ' | code: ' + code);
     }
 
-    // === ETAPE 2 : Verifier OTP et creer compte ===
-    @AuraEnabled
+    // ═══════════════════════════════════════════════════════════
+    // ETAPE 2 : Verifier OTP et creer compte
+    // ═══════════════════════════════════════════════════════════
+    @AuraEnabled(cacheable=false)
     public static String verifyOtpAndRegister(
             String firstName,
             String lastName,
@@ -67,20 +74,18 @@ public without sharing class SR_SelfRegistrationController {
             String confirmPassword,
             String otpCode) {
 
-        System.debug('=== verifyOtpAndRegister ===');
-        System.debug('email: '    + email);
-        System.debug('otpCode: '  + otpCode);
-
         if (String.isBlank(email) || String.isBlank(otpCode))
-            throw new AuraHandledException('Email et code OTP sont obligatoires.');
+            throw new AuraHandledException(
+                'Email et code OTP sont obligatoires.');
+
         if (String.isBlank(password) || password != confirmPassword)
-            throw new AuraHandledException('Mot de passe invalide ou non confirme.');
+            throw new AuraHandledException(
+                'Mot de passe invalide ou non confirme.');
 
         String cleanEmail = email.trim().toLowerCase();
         String cleanCode  = otpCode.trim();
 
-        System.debug('cleanEmail: ' + cleanEmail + ' | cleanCode: ' + cleanCode);
-
+        // ✅ Récupérer l'OTP
         List<SR_OTP__c> otps = [
             SELECT Id, Code__c, CreatedDate
             FROM   SR_OTP__c
@@ -89,65 +94,79 @@ public without sharing class SR_SelfRegistrationController {
             LIMIT  1
         ];
 
-        System.debug('OTP records found: ' + otps.size());
-
         if (otps.isEmpty())
-            throw new AuraHandledException('Aucun code OTP trouve. Veuillez recommencer.');
+            throw new AuraHandledException(
+                'Aucun code OTP trouve. Veuillez recommencer.');
 
         SR_OTP__c otp = otps[0];
-
-        System.debug('Stored code: [' + otp.Code__c + '] | Entered: [' + cleanCode + ']');
 
         // ✅ Vérifier expiration
         Datetime expiresAt = otp.CreatedDate.addMinutes(OTP_EXPIRY_MINUTES);
         if (Datetime.now() > expiresAt)
-            throw new AuraHandledException('Le code OTP a expire. Demandez-en un nouveau.');
+            throw new AuraHandledException(
+                'Le code OTP a expire. Demandez-en un nouveau.');
 
         // ✅ Vérifier le code
         if (otp.Code__c != cleanCode)
             throw new AuraHandledException('Code OTP incorrect.');
 
-        delete otp;
-        System.debug('OTP deleted. Creating portal user...');
-        return createPortalUser(firstName, lastName, cleanEmail, password);
-    }
+        // ✅ Supprimer l'OTP via SR_OTP_Manager
+        SR_OTP_Manager.deleteOtp(otp);
 
-    // === Compatibilite ascendante ===
-    public class SelfRegInput {
-        @AuraEnabled public String firstName;
-        @AuraEnabled public String lastName;
-        @AuraEnabled public String email;
-        @AuraEnabled public String password;
-        @AuraEnabled public String confirmPassword;
-    }
-
-    @AuraEnabled
-    public static String selfRegister(SelfRegInput input) {
-        if (input == null)
-            throw new AuraHandledException('Donnees manquantes.');
+        // ✅ Créer le compte
         return createPortalUser(
-            input.firstName,
-            input.lastName,
-            input.email,
-            input.password
+            firstName, lastName, cleanEmail, password
         );
     }
 
-    // === Methodes privees ===
+    // ═══════════════════════════════════════════════════════════
+    // Methode privee : Créer le user portail
+    // ═══════════════════════════════════════════════════════════
     private static String createPortalUser(
         String firstName, String lastName,
         String email,     String password) {
 
-        // ── 1. Récupérer le Record Type Person Account
-        RecordType personAccountRT = [
+        // ── 1. Récupérer le Profile ─────────────────────────────
+        List<Profile> profiles = [
+            SELECT Id, Name
+            FROM   Profile
+            WHERE  Name = 'Customer Community User'
+            LIMIT  1
+        ];
+        if (profiles.isEmpty())
+            throw new AuraHandledException(
+                'Profil introuvable.');
+
+        Profile communityProfile = profiles[0];
+
+        // ── 2. Récupérer le Permission Set ──────────────────────
+        List<PermissionSet> permSets = [
+            SELECT Id, Name
+            FROM   PermissionSet
+            WHERE  Name = 'Portal_Offres_Access'
+            LIMIT  1
+        ];
+        if (permSets.isEmpty())
+            throw new AuraHandledException(
+                'Permission Set introuvable.');
+
+        PermissionSet permSet = permSets[0];
+
+        // ── 3. Récupérer le Record Type Person Account ──────────
+        List<RecordType> rts = [
             SELECT Id
             FROM   RecordType
             WHERE  SObjectType = 'Account'
             AND    Name        = 'Person Account'
             LIMIT  1
         ];
+        if (rts.isEmpty())
+            throw new AuraHandledException(
+                'Record Type Person Account introuvable.');
 
-        // ── 2. Vérifier doublon
+        RecordType personAccountRT = rts[0];
+
+        // ── 4. Vérifier doublon Account ─────────────────────────
         List<Account> existingAccounts = [
             SELECT Id
             FROM   Account
@@ -156,18 +175,26 @@ public without sharing class SR_SelfRegistrationController {
             LIMIT  1
         ];
         if (!existingAccounts.isEmpty())
-            throw new AuraHandledException('Un compte existe déjà avec cet email.');
+            throw new AuraHandledException(
+                'Un compte existe déjà avec cet email.');
 
-        // ── 3. Créer le Person Account
-        Account personAccount      = new Account(
+        // ── 5. Créer le Person Account ──────────────────────────
+        Account personAccount = new Account(
             RecordTypeId = personAccountRT.Id,
             FirstName    = firstName,
             LastName     = lastName,
             PersonEmail  = email
         );
-        insert personAccount;
+        try {
+            // ✅ Insert via SR_OTP_Manager
+            SR_OTP_Manager.insertAccount(personAccount);
+            System.debug('✅ Account created: ' + personAccount.Id);
+        } catch(Exception e) {
+            throw new AuraHandledException(
+                'Erreur création compte : ' + e.getMessage());
+        }
 
-        // ── 4. Récupérer le Contact auto-généré
+        // ── 6. Récupérer le Contact auto-généré ─────────────────
         Account paWithContact = [
             SELECT Id, PersonContactId
             FROM   Account
@@ -175,20 +202,41 @@ public without sharing class SR_SelfRegistrationController {
             LIMIT  1
         ];
 
-        // ── 5. Construire l'utilisateur portail
+        if (paWithContact.PersonContactId == null) {
+            SR_OTP_Manager.deleteAccount(personAccount);
+            throw new AuraHandledException(
+                'Contact auto-généré introuvable.');
+        }
+
+        // ── 7. Construire alias, username, nickname ──────────────
         String aliasBase = (firstName.substring(0, 1) + lastName)
                             .replaceAll('[^A-Za-z0-9]', '');
+        if (String.isBlank(aliasBase)) aliasBase = 'user';
 
-        String nick = (firstName + '.' + lastName + '.' + Datetime.now().getTime())
-                        .replace(' ', '').toLowerCase();
+        String username = email;
+        List<User> existingUsernames = [
+            SELECT Id FROM User
+            WHERE Username = :username
+            LIMIT 1
+        ];
+        if (!existingUsernames.isEmpty()) {
+            username = email + '.'
+                     + Datetime.now().getTime();
+        }
 
+        String nick = (firstName + lastName
+                     + String.valueOf(Datetime.now().getTime()))
+                        .replaceAll('[^A-Za-z0-9]', '')
+                        .toLowerCase();
+
+        // ── 8. Construire l'utilisateur portail ──────────────────
         User u = new User(
             FirstName         = firstName,
             LastName          = lastName,
             Email             = email,
-            Username          = email,
+            Username          = username,
             ContactId         = paWithContact.PersonContactId,
-            ProfileId         = COMMUNITY_PROFILE,
+            ProfileId         = communityProfile.Id,
             TimeZoneSidKey    = 'Europe/Paris',
             LocaleSidKey      = 'fr_FR',
             EmailEncodingKey  = 'UTF-8',
@@ -201,25 +249,27 @@ public without sharing class SR_SelfRegistrationController {
                                     : nick
         );
 
-        // ── 6. Créer l'utilisateur externe
+        // ── 9. ✅ Insert User + Password + PermSet ───────────────
         try {
-            Id newUserId = Site.createExternalUser(u, paWithContact.Id, password);
-            if (newUserId == null)
-                throw new AuraHandledException('La création du compte a échoué.');
-            System.debug('Portal user created: ' + newUserId);
+            // ✅ Appeler la méthode asynchrone pour éviter l'erreur MIXED_DML_OPERATION
+            String userJson = JSON.serialize(u);
+            SR_OTP_Manager.createUserAsync(userJson, password, permSet.Id);
+            System.debug('✅ User creation queued asynchronously');
+
             return 'OK';
 
-        } catch (Site.ExternalUserCreateException ex) {
-            delete personAccount;
-            throw new AuraHandledException('Inscription impossible : ' + ex.getMessage());
-
         } catch (Exception ex) {
-            delete personAccount;
-            throw new AuraHandledException('Erreur inattendue : ' + ex.getMessage());
+            System.debug('❌ Error: ' + ex.getMessage());
+            System.debug('❌ Type: ' + ex.getTypeName());
+            SR_OTP_Manager.deleteAccount(personAccount);
+            throw new AuraHandledException(
+                'Erreur : ' + ex.getMessage());
         }
     }
 
-    // ✅ Générateur OTP fiable
+    // ═══════════════════════════════════════════════════════════
+    // Générateur OTP
+    // ═══════════════════════════════════════════════════════════
     private static String generateOtpCode() {
         String code = '';
         for (Integer i = 0; i < OTP_LENGTH; i++) {

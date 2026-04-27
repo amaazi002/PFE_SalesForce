@@ -1,0 +1,205 @@
+<template>
+    <div class="profile-container">
+
+        <button class="btn-back" onclick={handleBack}>← Retour</button>
+
+        <template if:true={isLoading}>
+            <div class="loading">Chargement...</div>
+        </template>
+
+        <template if:true={candidature}>
+
+            <div class="profile-header">
+                <div class="profile-avatar">{initiales}</div>
+                <div class="profile-info">
+                    <h1 class="profile-name">{candidature.Candidat__r.Name}</h1>
+                    <p class="profile-email">{candidature.Candidat__r.Email}</p>
+                    <p class="profile-offre">
+                        Candidature pour : {candidature.Offre__r.Titre__c}
+                    </p>
+                </div>
+                <div class="profile-badges">
+                    <span class={statutClass}>{candidature.Statut__c}</span>
+                    <template if:true={hasDecision}>
+                        <span class={decisionClass}>{candidature.Decision__c}</span>
+                    </template>
+                </div>
+            </div>
+
+            <div class="profile-content">
+
+                <!-- Colonne gauche -->
+                <div class="profile-left">
+
+                    <div class="profile-card">
+                        <h3 class="card-title">Score de matching</h3>
+                        <div class="score-section">
+                            <div class="score-bar-wrap">
+                                <div class={scoreBarClass}
+                                     style={scoreBarStyle}>
+                                </div>
+                            </div>
+                            <span class="score-value">
+                                {candidature.Score_Matching__c}%
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="profile-card">
+                        <h3 class="card-title">Informations</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="info-label">Date de postulation</span>
+                                <span class="info-value">{dateFmt}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Date d'entretien</span>
+                                <span class="info-value">{dateEntretienFmt}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Niveau d'études</span>
+                                <span class="info-value">
+                                    {candidature.NiveauEtude__c}
+                                </span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Dernier diplôme</span>
+                                <span class="info-value">
+                                    {candidature.DernierDiplome__c}
+                                </span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">École / Université</span>
+                                <span class="info-value">
+                                    {candidature.EcoleUniversite__c}
+                                </span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Année d'obtention</span>
+                                <span class="info-value">
+                                    {candidature.AnneeObtention__c}
+                                </span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Années d'expérience</span>
+                                <span class="info-value">
+                                    {candidature.AnneesExperience__c}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-card">
+                        <h3 class="card-title">CV</h3>
+                        <template if:true={hasCv}>
+                            <a href={candidature.CV_Public_URL__c}
+                               target="_blank"
+                               class="cv-btn">
+                                📄 Télécharger le CV
+                            </a>
+                        </template>
+                        <template if:false={hasCv}>
+                            <span class="text-muted">Aucun CV disponible</span>
+                        </template>
+                    </div>
+
+                </div>
+
+                <!-- Colonne droite -->
+                <div class="profile-right">
+
+                    <div class="profile-card">
+                        <h3 class="card-title">Compétences techniques</h3>
+                        <p class="card-text">
+                            {candidature.Competences_Tech__c}
+                        </p>
+                    </div>
+
+                    <div class="profile-card">
+                        <h3 class="card-title">Compétences personnelles</h3>
+                        <p class="card-text">
+                            {candidature.Competences_Perso__c}
+                        </p>
+                    </div>
+
+                    <div class="profile-card">
+                        <h3 class="card-title">Expérience professionnelle</h3>
+                        <p class="card-text">
+                            {candidature.Experience_Prof__c}
+                        </p>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="profile-card">
+                        <h3 class="card-title">Actions</h3>
+
+                        <div class="action-row">
+                            <div class="action-field">
+                                <label class="action-label">Nouveau statut</label>
+                                <select
+                                    class="select-action"
+                                    onchange={handleStatutChange}>
+                                    <option value="">-- Choisir --</option>
+                                    <template for:each={statutOptions} for:item="opt">
+                                        <option key={opt.value} value={opt.value}>
+                                            {opt.label}
+                                        </option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div class="action-field">
+                                <label class="action-label">Décision</label>
+                                <select
+                                    class="select-action"
+                                    onchange={handleDecisionChange}>
+                                    <option value="">-- Choisir --</option>
+                                    <template for:each={decisionOptions} for:item="opt">
+                                        <option key={opt.value} value={opt.value}>
+                                            {opt.label}
+                                        </option>
+                                    </template>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Date entretien -->
+                        <div class="action-field date-field">
+                            <label class="action-label">
+                                Date et heure d'entretien
+                            </label>
+                            <input
+                                type="datetime-local"
+                                class="input-date"
+                                value={newDateEntretien}
+                                onchange={handleDateEntretienChange}
+                            />
+                        </div>
+
+                        <button
+                            class="btn-save-action"
+                            onclick={handleSaveAction}>
+                            Enregistrer
+                        </button>
+
+                        <template if:true={errorMessage}>
+                            <div class="error-msg">{errorMessage}</div>
+                        </template>
+
+                        <template if:true={successMsg}>
+                            <div class="success-msg">{successMsg}</div>
+                        </template>
+
+                    </div>
+
+                </div>
+            </div>
+        </template>
+
+        <template if:true={errorMessage}>
+            <template if:false={candidature}>
+                <div class="error-msg">{errorMessage}</div>
+            </template>
+        </template>
+
+    </div>
+</template>
