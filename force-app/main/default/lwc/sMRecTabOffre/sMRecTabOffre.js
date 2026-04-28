@@ -1,10 +1,15 @@
-import { LightningElement, track }   from 'lwc';
-import { ShowToastEvent }            from 'lightning/platformShowToastEvent';
-import { NavigationMixin }           from 'lightning/navigation';
-import getOffresWithStats            from '@salesforce/apex/SMRecTabOffreController.getOffresWithStats';
-import getCandidatures               from '@salesforce/apex/SMRecTabOffreController.getCandidatures';
-import updateCandidaturesGrouped     from '@salesforce/apex/SMRecTabOffreController.updateCandidaturesGrouped';
-import updateOffre                   from '@salesforce/apex/SMRecTabOffreController.updateOffre';
+import { LightningElement, track, wire } from 'lwc';
+import { ShowToastEvent }                from 'lightning/platformShowToastEvent';
+import { NavigationMixin }               from 'lightning/navigation';
+import { getPicklistValues,
+         getObjectInfo }                 from 'lightning/uiObjectInfoApi';
+import CANDIDATURE_OBJECT                from '@salesforce/schema/Candidature__c';
+import STATUT_FIELD                      from '@salesforce/schema/Candidature__c.Statut__c';
+import DECISION_FIELD                    from '@salesforce/schema/Candidature__c.Decision__c';
+import getOffresWithStats                from '@salesforce/apex/SMRecTabOffreController.getOffresWithStats';
+import getCandidatures                   from '@salesforce/apex/SMRecTabOffreController.getCandidatures';
+import updateCandidaturesGrouped         from '@salesforce/apex/SMRecTabOffreController.updateCandidaturesGrouped';
+import updateOffre                       from '@salesforce/apex/SMRecTabOffreController.updateOffre';
 
 export default class SmRecTabOffre extends NavigationMixin(LightningElement) {
 
@@ -14,6 +19,11 @@ export default class SmRecTabOffre extends NavigationMixin(LightningElement) {
     @track activeFilter   = '';
     @track actionUpdates  = {};
 
+    // ✅ Picklist
+    @track statutOptions   = [];
+    @track decisionOptions = [];
+    recordTypeId           = '';
+
     isModalOpen       = false;
     isActionModalOpen = false;
     isEditModalOpen   = false;
@@ -21,6 +31,41 @@ export default class SmRecTabOffre extends NavigationMixin(LightningElement) {
     modalOfferTitle   = '';
     editRecordId      = '';
     editOfferTitle    = '';
+
+    // ══════════════════════════════════════════════
+    // WIRE — Object Info
+    // ══════════════════════════════════════════════
+    @wire(getObjectInfo, { objectApiName: CANDIDATURE_OBJECT })
+    wiredObjectInfo({ data, error }) {
+        if (data)  this.recordTypeId = data.defaultRecordTypeId;
+        if (error) console.error('getObjectInfo:', JSON.stringify(error));
+    }
+
+    @wire(getPicklistValues, {
+        recordTypeId : '$recordTypeId',
+        fieldApiName : STATUT_FIELD
+    })
+    wiredStatutValues({ data, error }) {
+        if (data) {
+            this.statutOptions = data.values.map(v => ({
+                label : v.label,
+                value : v.value
+            }));
+        }
+    }
+
+    @wire(getPicklistValues, {
+        recordTypeId : '$recordTypeId',
+        fieldApiName : DECISION_FIELD
+    })
+    wiredDecisionValues({ data, error }) {
+        if (data) {
+            this.decisionOptions = data.values.map(v => ({
+                label : v.label,
+                value : v.value
+            }));
+        }
+    }
 
     // ══════════════════════════════════════════════
     // LIFECYCLE
@@ -55,6 +100,10 @@ export default class SmRecTabOffre extends NavigationMixin(LightningElement) {
         return this.rows && this.rows.length > 0;
     }
 
+    get totalOffres() {
+        return this.rows ? this.rows.length : 0;
+    }
+
     get hasCandidatures() {
         return this.filteredCandidatures &&
                this.filteredCandidatures.length > 0;
@@ -72,12 +121,12 @@ export default class SmRecTabOffre extends NavigationMixin(LightningElement) {
 
         if (this.activeFilter === 'entretien') {
             list = list.filter(c =>
-                c.Statut__c === 'En entretien' || c.DateEntretien__c
+                String(c.Statut__c || '').toLowerCase().includes('entretien') &&
+                !String(c.Statut__c || '').toLowerCase().includes('sans')
             );
         } else if (this.activeFilter === 'sansEntretien') {
             list = list.filter(c =>
-                c.Statut__c === 'Sans entretien' ||
-                (c.Statut__c === 'Soumise' && !c.DateEntretien__c)
+                String(c.Statut__c || '').toLowerCase().includes('sans')
             );
         } else if (this.activeFilter === 'nouveaux') {
             list = list.filter(c => c.isNew);
@@ -135,12 +184,6 @@ export default class SmRecTabOffre extends NavigationMixin(LightningElement) {
     // ══════════════════════════════════════════════
     // MODALE CANDIDATURES
     // ══════════════════════════════════════════════
-    async handleRowClick(event) {
-        const offreId = event.currentTarget.dataset.id;
-        const titre   = event.currentTarget.dataset.titre;
-        await this.openCandidatures(offreId, titre);
-    }
-
     async openCandidatures(offreId, titre) {
         this.modalOfferId    = offreId;
         this.modalOfferTitle = titre;
@@ -342,14 +385,22 @@ export default class SmRecTabOffre extends NavigationMixin(LightningElement) {
         const score     = c.Score_Matching__c || 0;
         const oneDayAgo = new Date();
         oneDayAgo.setDate(oneDayAgo.getDate() - 1);
-        const depotDate = c.DateDepot__c
-            ? new Date(c.DateDepot__c) : null;
-        const isNew = c.Statut__c === 'Soumise' &&
-                      depotDate && depotDate >= oneDayAgo;
+        const depotDate = c.DateDepot__c ? new Date(c.DateDepot__c) : null;
+        const isNew     = c.Statut__c === 'Soumise' &&
+                          depotDate && depotDate >= oneDayAgo;
+
+        // ✅ Initiales pour avatar
+        const name     = c.Candidat__r?.Name || '';
+        const initiales = name.split(' ')
+            .map(n => n[0])
+            .join('')
+            .toUpperCase()
+            .substring(0, 2);
 
         return {
             ...c,
-            candidateName : c.Candidat__r?.Name || '—',
+            candidateName : name || '—',
+            initiales     : initiales || '?',
             hasCv         : !!c.CV_Public_URL__c,
             isSelected    : false,
             isNew         : isNew,
@@ -361,9 +412,9 @@ export default class SmRecTabOffre extends NavigationMixin(LightningElement) {
 
     getStatutClass(statut) {
         const s = String(statut || '').toLowerCase();
-        if (s === 'soumise')        return 'badge-statut badge-soumise';
-        if (s === 'en entretien')   return 'badge-statut badge-entretien';
-        if (s === 'sans entretien') return 'badge-statut badge-sans-entretien';
+        if (s === 'soumise')                             return 'badge-statut badge-soumise';
+        if (s.includes('entretien') && !s.includes('sans')) return 'badge-statut badge-entretien';
+        if (s.includes('sans'))                          return 'badge-statut badge-sans-entretien';
         return 'badge-statut';
     }
 

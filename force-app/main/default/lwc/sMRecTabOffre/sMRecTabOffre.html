@@ -1,68 +1,126 @@
 <template>
     <div class="rec-container">
 
+        <!-- Header -->
         <div class="rec-header">
-            <h1 class="rec-title">Offres d'emploi</h1>
+            <div class="rec-header-left">
+                <div class="rec-header-icon">📋</div>
+                <div>
+                    <h1 class="rec-title">Offres d'emploi</h1>
+                    <p class="rec-subtitle">{totalOffres} offre(s) active(s)</p>
+                </div>
+            </div>
         </div>
 
+        <!-- Tableau -->
         <div class="rec-table-wrapper">
             <table class="rec-table">
                 <thead>
                     <tr>
-                        <th>Offre</th>
-                        <th>New Submissions</th>
-                        <th>En attente d'entretien</th>
-                        <th>Entretien planifié</th>
-                        <th>Total candidats</th>
-                        <th>Actions</th>
+                        <th class="th-offre">Offre</th>
+                        <th class="th-center">
+                            <div class="th-inner">
+                                <span class="th-icon">🆕</span>
+                                New Submissions
+                            </div>
+                        </th>
+                        <th class="th-center">
+                            <div class="th-inner">
+                                <span class="th-icon">⏳</span>
+                                En attente
+                            </div>
+                        </th>
+                        <th class="th-center">
+                            <div class="th-inner">
+                                <span class="th-icon">📅</span>
+                                Entretien planifié
+                            </div>
+                        </th>
+                        <th class="th-center">
+                            <div class="th-inner">
+                                <span class="th-icon">👥</span>
+                                Total
+                            </div>
+                        </th>
+                        <th class="th-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     <template if:true={hasRows}>
                         <template for:each={rows} for:item="row">
-                            <tr key={row.offreId}>
-                                <td>
-                                    <div class="offre-titre">{row.offre.Titre__c}</div>
+                            <tr key={row.offreId} class="table-row">
+                                <!-- Offre -->
+                                <td class="td-offre">
+                                    <div class="offre-titre">
+                                        {row.offre.Titre__c}
+                                    </div>
                                     <div class="offre-meta">
-                                        <span>{row.deadlineFmt}</span>
-                                        <span class="sep">·</span>
-                                        <span>{row.offre.Localisation__c}</span>
-                                        <span class="sep">·</span>
+                                        <span class="meta-item">
+                                            <span class="meta-icon">📍</span>
+                                            {row.offre.Localisation__c}
+                                        </span>
+                                        <span class="meta-sep">·</span>
+                                        <span class="meta-item">
+                                            <span class="meta-icon">📆</span>
+                                            {row.deadlineFmt}
+                                        </span>
+                                        <span class="meta-sep">·</span>
                                         <span class={row.statutClass}>
                                             {row.offre.Statut__c}
                                         </span>
                                     </div>
                                 </td>
-                                <td>
-                                    <span class="badge badge-new">
-                                        {row.newSubmissions}
-                                    </span>
+
+                                <!-- New Submissions -->
+                                <td class="td-center">
+                                    <div class="stat-cell">
+                                        <span class="stat-number stat-new">
+                                            {row.newSubmissions}
+                                        </span>
+                                    </div>
                                 </td>
-                                <td>
-                                    <span class="badge badge-wait">
-                                        {row.enAttenteEntretien}
-                                    </span>
+
+                                <!-- En attente -->
+                                <td class="td-center">
+                                    <div class="stat-cell">
+                                        <span class="stat-number stat-wait">
+                                            {row.enAttenteEntretien}
+                                        </span>
+                                    </div>
                                 </td>
-                                <td>
-                                    <span class="badge badge-planned">
-                                        {row.entretienPlanifie}
-                                    </span>
+
+                                <!-- Entretien planifié -->
+                                <td class="td-center">
+                                    <div class="stat-cell">
+                                        <span class="stat-number stat-planned">
+                                            {row.entretienPlanifie}
+                                        </span>
+                                    </div>
                                 </td>
-                                <td>
+
+                                <!-- Total -->
+                                <td class="td-center">
                                     <button
-                                        class="total-link"
+                                        class="total-btn"
                                         data-id={row.offreId}
                                         data-titre={row.offre.Titre__c}
                                         onclick={handleTotalClick}>
-                                        {row.totalCandidats}
+                                        <span class="total-number">
+                                            {row.totalCandidats}
+                                        </span>
+                                        <span class="total-label">
+                                            voir tout →
+                                        </span>
                                     </button>
                                 </td>
-                                <td>
+
+                                <!-- Actions -->
+                                <td class="td-center">
                                     <button
                                         class="btn-edit"
                                         data-id={row.offreId}
                                         onclick={handleEdit}>
-                                        Modifier
+                                        ✏️ Modifier
                                     </button>
                                 </td>
                             </tr>
@@ -70,8 +128,11 @@
                     </template>
                     <template if:false={hasRows}>
                         <tr>
-                            <td colspan="6" class="empty-state">
-                                Aucune offre trouvée.
+                            <td colspan="6">
+                                <div class="empty-state">
+                                    <div class="empty-icon">📭</div>
+                                    <p>Aucune offre trouvée.</p>
+                                </div>
                             </td>
                         </tr>
                     </template>
@@ -86,84 +147,110 @@
             <div class="modal-backdrop" onclick={closeModal}></div>
             <div class="modal-box modal-large">
                 <div class="modal-header">
-                    <h2>Candidatures — {modalOfferTitle}</h2>
+                    <div class="modal-header-content">
+                        <span class="modal-header-icon">👥</span>
+                        <div>
+                            <h2 class="modal-title">Candidatures</h2>
+                            <p class="modal-subtitle">{modalOfferTitle}</p>
+                        </div>
+                    </div>
                     <button class="modal-close" onclick={closeModal}>✕</button>
                 </div>
                 <div class="modal-body">
 
+                    <!-- Filtres -->
                     <div class="modal-filters">
-                        <input
-                            type="text"
-                            class="search-input"
-                            placeholder="Rechercher par nom..."
-                            value={searchTerm}
-                            oninput={handleSearch}
-                        />
+                        <div class="search-wrapper">
+                            <span class="search-icon">🔍</span>
+                            <input
+                                type="text"
+                                class="search-input"
+                                placeholder="Rechercher par nom..."
+                                value={searchTerm}
+                                oninput={handleSearch}
+                            />
+                        </div>
                         <div class="filter-buttons">
                             <button
                                 class={btnEntretienClass}
                                 onclick={handleFilterEntretien}>
-                                Entretien planifié
+                                📅 Entretien planifié
                             </button>
                             <button
                                 class={btnSansEntretienClass}
                                 onclick={handleFilterSansEntretien}>
-                                Sans entretien
+                                ⏳ Sans entretien
                             </button>
                             <button
                                 class={btnNouveauxClass}
                                 onclick={handleFilterNouveaux}>
-                                Nouveaux
+                                🆕 Nouveaux
                             </button>
                         </div>
                     </div>
 
+                    <!-- Barre sélection -->
                     <template if:true={hasSelected}>
-                        <div class="candidats-selected-bar">
-                            <span>{selectedCount} candidat(s) sélectionné(s)</span>
+                        <div class="selected-bar">
+                            <div class="selected-info">
+                                <span class="selected-dot"></span>
+                                <span>
+                                    {selectedCount} candidat(s) sélectionné(s)
+                                </span>
+                            </div>
                             <button
                                 class="btn-action-group"
                                 onclick={handleOpenActionModal}>
-                                Action groupée
+                                ⚡ Action groupée
                             </button>
                         </div>
                     </template>
 
+                    <!-- Tableau candidatures -->
                     <template if:true={hasCandidatures}>
-                        <table class="rec-table">
+                        <table class="rec-table inner-table">
                             <thead>
                                 <tr>
-                                    <th style="width:40px">
+                                    <th style="width:44px">
                                         <input
                                             type="checkbox"
+                                            class="checkbox-input"
                                             checked={allSelected}
                                             onchange={handleSelectAll}
                                         />
                                     </th>
-                                    <th>Nom du candidat</th>
+                                    <th>Candidat</th>
                                     <th>Statut</th>
-                                    <th>Score</th>
+                                    <th>Score matching</th>
                                     <th>CV</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <template for:each={filteredCandidatures} for:item="cand">
-                                    <tr key={cand.Id}>
+                                <template
+                                    for:each={filteredCandidatures}
+                                    for:item="cand">
+                                    <tr key={cand.Id} class="table-row">
                                         <td>
                                             <input
                                                 type="checkbox"
+                                                class="checkbox-input"
                                                 checked={cand.isSelected}
                                                 data-id={cand.Id}
                                                 onchange={handleSelectOne}
                                             />
                                         </td>
                                         <td>
-                                            <button
-                                                class="candidat-name-link"
-                                                data-id={cand.Id}
-                                                onclick={handleCandidatClick}>
-                                                {cand.candidateName}
-                                            </button>
+                                            <div class="candidat-cell">
+                                                <div class="candidat-avatar">
+                                                    {cand.initiales}
+                                                </div>
+                                                <button
+                                                    class="candidat-name-link"
+                                                    data-id={cand.Id}
+                                                    onclick={handleCandidatClick}>
+                                                    {cand.candidateName}
+                                                </button>
+                                            </div>
                                         </td>
                                         <td>
                                             <span class={cand.statutClass}>
@@ -185,10 +272,11 @@
                                         </td>
                                         <td>
                                             <template if:true={cand.hasCv}>
-                                                <a href={cand.CV_Public_URL__c}
-                                                   target="_blank"
-                                                   class="cv-link">
-                                                    Voir CV
+                                                <a
+                                                    href={cand.CV_Public_URL__c}
+                                                    target="_blank"
+                                                    class="cv-link">
+                                                    📄 CV
                                                 </a>
                                             </template>
                                             <template if:false={cand.hasCv}>
@@ -202,7 +290,10 @@
                     </template>
 
                     <template if:false={hasCandidatures}>
-                        <div class="empty-state">Aucune candidature.</div>
+                        <div class="empty-state">
+                            <div class="empty-icon">📭</div>
+                            <p>Aucune candidature.</p>
+                        </div>
                     </template>
                 </div>
             </div>
@@ -215,23 +306,45 @@
             <div class="modal-backdrop" onclick={closeActionModal}></div>
             <div class="modal-box modal-large">
                 <div class="modal-header">
-                    <h2>Action groupée</h2>
-                    <button class="modal-close" onclick={closeActionModal}>✕</button>
+                    <div class="modal-header-content">
+                        <span class="modal-header-icon">⚡</span>
+                        <div>
+                            <h2 class="modal-title">Action groupée</h2>
+                            <p class="modal-subtitle">
+                                {selectedCount} candidat(s) sélectionné(s)
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        class="modal-close"
+                        onclick={closeActionModal}>✕
+                    </button>
                 </div>
                 <div class="modal-body">
-                    <table class="rec-table">
+                    <table class="rec-table inner-table">
                         <thead>
                             <tr>
-                                <th>Nom du candidat</th>
+                                <th>Candidat</th>
                                 <th>Statut actuel</th>
                                 <th>Nouveau statut</th>
                                 <th>Décision</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <template for:each={selectedCandidatures} for:item="cand">
-                                <tr key={cand.Id}>
-                                    <td>{cand.candidateName}</td>
+                            <template
+                                for:each={selectedCandidatures}
+                                for:item="cand">
+                                <tr key={cand.Id} class="table-row">
+                                    <td>
+                                        <div class="candidat-cell">
+                                            <div class="candidat-avatar">
+                                                {cand.initiales}
+                                            </div>
+                                            <span class="candidat-name-text">
+                                                {cand.candidateName}
+                                            </span>
+                                        </div>
+                                    </td>
                                     <td>
                                         <span class={cand.statutClass}>
                                             {cand.Statut__c}
@@ -239,27 +352,40 @@
                                     </td>
                                     <td>
                                         <select
-                                            class="select-statut"
+                                            class="select-styled"
                                             data-id={cand.Id}
                                             onchange={handleNewStatutChange}>
-                                            <option value="">-- Choisir --</option>
-                                            <option value="Soumise">Soumise</option>
-                                            <option value="En entretien">
-                                                En entretien
+                                            <option value="">
+                                                -- Choisir --
                                             </option>
-                                            <option value="Sans entretien">
-                                                Sans entretien
-                                            </option>
+                                            <template
+                                                for:each={statutOptions}
+                                                for:item="opt">
+                                                <option
+                                                    key={opt.value}
+                                                    value={opt.value}>
+                                                    {opt.label}
+                                                </option>
+                                            </template>
                                         </select>
                                     </td>
                                     <td>
                                         <select
-                                            class="select-decision"
+                                            class="select-styled"
                                             data-id={cand.Id}
                                             onchange={handleDecisionChange}>
-                                            <option value="">-- Choisir --</option>
-                                            <option value="Accepté">Accepté</option>
-                                            <option value="Refusé">Refusé</option>
+                                            <option value="">
+                                                -- Choisir --
+                                            </option>
+                                            <template
+                                                for:each={decisionOptions}
+                                                for:item="opt">
+                                                <option
+                                                    key={opt.value}
+                                                    value={opt.value}>
+                                                    {opt.label}
+                                                </option>
+                                            </template>
                                         </select>
                                     </td>
                                 </tr>
@@ -268,11 +394,15 @@
                     </table>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn-cancel" onclick={closeActionModal}>
+                    <button
+                        class="btn-cancel"
+                        onclick={closeActionModal}>
                         Annuler
                     </button>
-                    <button class="btn-save" onclick={handleSaveActions}>
-                        Enregistrer
+                    <button
+                        class="btn-save"
+                        onclick={handleSaveActions}>
+                        ✅ Enregistrer
                     </button>
                 </div>
             </div>
@@ -283,10 +413,19 @@
         <!-- ══════════════════════════════════════════════ -->
         <template if:true={isEditModalOpen}>
             <div class="modal-backdrop" onclick={closeEditModal}></div>
-            <div class="modal-box">
+            <div class="modal-box modal-edit">
                 <div class="modal-header">
-                    <h2>Modifier — {editOfferTitle}</h2>
-                    <button class="modal-close" onclick={closeEditModal}>✕</button>
+                    <div class="modal-header-content">
+                        <span class="modal-header-icon">✏️</span>
+                        <div>
+                            <h2 class="modal-title">Modifier l'offre</h2>
+                            <p class="modal-subtitle">{editOfferTitle}</p>
+                        </div>
+                    </div>
+                    <button
+                        class="modal-close"
+                        onclick={closeEditModal}>✕
+                    </button>
                 </div>
                 <div class="modal-body">
                     <lightning-record-edit-form
@@ -326,12 +465,14 @@
                         </div>
 
                         <div class="modal-footer">
-                            <button class="btn-cancel" onclick={closeEditModal}>
+                            <button
+                                class="btn-cancel"
+                                onclick={closeEditModal}>
                                 Annuler
                             </button>
                             <lightning-button
                                 variant="brand"
-                                label="Enregistrer"
+                                label="✅ Enregistrer"
                                 type="submit">
                             </lightning-button>
                         </div>

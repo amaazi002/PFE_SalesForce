@@ -1,24 +1,32 @@
 <template>
     <div class="rec-container">
 
+        <!-- Header -->
         <div class="rec-header">
             <button class="btn-back" onclick={handleBack}>← Retour</button>
-            <h1 class="rec-title">
-                Toutes les candidatures
-                <template if:true={offreTitre}>
-                    — {offreTitre}
-                </template>
-            </h1>
+            <div class="rec-header-info">
+                <h1 class="rec-title">
+                    Toutes les candidatures
+                    <template if:true={offreTitre}>
+                        — {offreTitre}
+                    </template>
+                </h1>
+                <p class="rec-subtitle">{totalCandidatures} candidature(s)</p>
+            </div>
         </div>
 
+        <!-- Filtres -->
         <div class="filters-bar">
-            <input
-                type="text"
-                class="search-input"
-                placeholder="Rechercher par nom..."
-                value={searchTerm}
-                oninput={handleSearch}
-            />
+            <div class="search-wrapper">
+                <span class="search-icon">🔍</span>
+                <input
+                    type="text"
+                    class="search-input"
+                    placeholder="Rechercher par nom..."
+                    value={searchTerm}
+                    oninput={handleSearch}
+                />
+            </div>
             <div class="filter-buttons">
                 <button
                     class={btnTousClass}
@@ -47,32 +55,39 @@
             </div>
         </div>
 
+        <!-- Barre sélection -->
         <template if:true={hasSelected}>
-            <div class="candidats-selected-bar">
-                <span>{selectedCount} candidat(s) sélectionné(s)</span>
+            <div class="selected-bar">
+                <div class="selected-info">
+                    <span class="selected-dot"></span>
+                    <span>{selectedCount} candidat(s) sélectionné(s)</span>
+                </div>
                 <button
                     class="btn-action-group"
                     onclick={handleOpenActionModal}>
-                    Action groupée
+                    ⚡ Action groupée
                 </button>
             </div>
         </template>
 
+        <!-- Tableau -->
         <div class="rec-table-wrapper">
             <template if:true={hasCandidatures}>
                 <table class="rec-table">
                     <thead>
                         <tr>
-                            <th style="width:40px">
+                            <th style="width:44px">
                                 <input
                                     type="checkbox"
+                                    class="checkbox-input"
                                     checked={allSelected}
                                     onchange={handleSelectAll}
                                 />
                             </th>
-                            <th>Nom du candidat</th>
+                            <th>Candidat</th>
                             <th>Offre</th>
                             <th>Statut</th>
+                            <th>Décision</th>
                             <th>Score</th>
                             <th>Date candidature</th>
                             <th>CV</th>
@@ -80,29 +95,54 @@
                     </thead>
                     <tbody>
                         <template for:each={candidatures} for:item="cand">
-                            <tr key={cand.Id}>
+                            <tr key={cand.Id} class="table-row">
                                 <td>
                                     <input
                                         type="checkbox"
+                                        class="checkbox-input"
                                         checked={cand.isSelected}
                                         data-id={cand.Id}
                                         onchange={handleSelectOne}
                                     />
                                 </td>
+                                <!-- Candidat -->
                                 <td>
-                                    <button
-                                        class="candidat-name-link"
-                                        data-id={cand.Id}
-                                        onclick={handleCandidatClick}>
-                                        {cand.candidateName}
-                                    </button>
+                                    <div class="candidat-cell">
+                                        <div class="candidat-avatar">
+                                            {cand.initiales}
+                                        </div>
+                                        <button
+                                            class="candidat-name-link"
+                                            data-id={cand.Id}
+                                            onclick={handleCandidatClick}>
+                                            {cand.candidateName}
+                                        </button>
+                                    </div>
                                 </td>
-                                <td>{cand.offreTitre}</td>
+                                <!-- Offre -->
+                                <td>
+                                    <span class="offre-label">
+                                        {cand.offreTitre}
+                                    </span>
+                                </td>
+                                <!-- Statut -->
                                 <td>
                                     <span class={cand.statutClass}>
                                         {cand.Statut__c}
                                     </span>
                                 </td>
+                                <!-- ✅ Décision -->
+                                <td>
+                                    <template if:true={cand.hasDecision}>
+                                        <span class={cand.decisionClass}>
+                                            {cand.Decision__c}
+                                        </span>
+                                    </template>
+                                    <template if:false={cand.hasDecision}>
+                                        <span class="text-muted">—</span>
+                                    </template>
+                                </td>
+                                <!-- Score -->
                                 <td>
                                     <div class="score-bar-wrap">
                                         <div class="score-bar-bg">
@@ -116,14 +156,20 @@
                                         </span>
                                     </div>
                                 </td>
-                                <td>{cand.dateFmt}</td>
+                                <!-- Date -->
+                                <td>
+                                    <span class="date-label">
+                                        {cand.dateFmt}
+                                    </span>
+                                </td>
+                                <!-- CV -->
                                 <td>
                                     <template if:true={cand.hasCv}>
                                         <a
                                             href={cand.CV_Public_URL__c}
                                             target="_blank"
                                             class="cv-link">
-                                            Voir CV
+                                            📄 CV
                                         </a>
                                     </template>
                                     <template if:false={cand.hasCv}>
@@ -138,7 +184,8 @@
 
             <template if:false={hasCandidatures}>
                 <div class="empty-state">
-                    Aucune candidature trouvée.
+                    <div class="empty-icon">📭</div>
+                    <p>Aucune candidature trouvée.</p>
                 </div>
             </template>
         </div>
@@ -150,17 +197,25 @@
             <div class="modal-backdrop" onclick={closeActionModal}></div>
             <div class="modal-box modal-large">
                 <div class="modal-header">
-                    <h2>Action groupée</h2>
+                    <div class="modal-header-content">
+                        <span class="modal-header-icon">⚡</span>
+                        <div>
+                            <h2 class="modal-title">Action groupée</h2>
+                            <p class="modal-subtitle">
+                                {selectedCount} candidat(s) sélectionné(s)
+                            </p>
+                        </div>
+                    </div>
                     <button
                         class="modal-close"
                         onclick={closeActionModal}>✕
                     </button>
                 </div>
                 <div class="modal-body">
-                    <table class="rec-table">
+                    <table class="rec-table inner-table">
                         <thead>
                             <tr>
-                                <th>Nom du candidat</th>
+                                <th>Candidat</th>
                                 <th>Statut actuel</th>
                                 <th>Nouveau statut</th>
                                 <th>Décision</th>
@@ -170,8 +225,17 @@
                             <template
                                 for:each={selectedCandidatures}
                                 for:item="cand">
-                                <tr key={cand.Id}>
-                                    <td>{cand.candidateName}</td>
+                                <tr key={cand.Id} class="table-row">
+                                    <td>
+                                        <div class="candidat-cell">
+                                            <div class="candidat-avatar">
+                                                {cand.initiales}
+                                            </div>
+                                            <span class="candidat-name-text">
+                                                {cand.candidateName}
+                                            </span>
+                                        </div>
+                                    </td>
                                     <td>
                                         <span class={cand.statutClass}>
                                             {cand.Statut__c}
@@ -179,7 +243,7 @@
                                     </td>
                                     <td>
                                         <select
-                                            class="select-statut"
+                                            class="select-styled"
                                             data-id={cand.Id}
                                             onchange={handleNewStatutChange}>
                                             <option value="">
@@ -198,7 +262,7 @@
                                     </td>
                                     <td>
                                         <select
-                                            class="select-decision"
+                                            class="select-styled"
                                             data-id={cand.Id}
                                             onchange={handleDecisionChange}>
                                             <option value="">
@@ -229,7 +293,7 @@
                     <button
                         class="btn-save"
                         onclick={handleSaveActions}>
-                        Enregistrer
+                        ✅ Enregistrer
                     </button>
                 </div>
             </div>

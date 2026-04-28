@@ -17,7 +17,6 @@ export default class SmRecAllApps extends NavigationMixin(LightningElement) {
     @track isActionModalOpen = false;
     @track actionUpdates     = {};
 
-    // ✅ Picklist
     @track statutOptions     = [];
     @track decisionOptions   = [];
     recordTypeId             = '';
@@ -26,22 +25,14 @@ export default class SmRecAllApps extends NavigationMixin(LightningElement) {
     offreTitre = '';
 
     // ══════════════════════════════════════════════
-    // WIRE — Object Info
+    // WIRE
     // ══════════════════════════════════════════════
     @wire(getObjectInfo, { objectApiName: CANDIDATURE_OBJECT })
     wiredObjectInfo({ data, error }) {
-        if (data) {
-            this.recordTypeId = data.defaultRecordTypeId;
-        }
-        if (error) {
-            console.error('getObjectInfo error:',
-                JSON.stringify(error));
-        }
+        if (data)  this.recordTypeId = data.defaultRecordTypeId;
+        if (error) console.error('getObjectInfo:', JSON.stringify(error));
     }
 
-    // ══════════════════════════════════════════════
-    // WIRE — Picklist Statut
-    // ══════════════════════════════════════════════
     @wire(getPicklistValues, {
         recordTypeId : '$recordTypeId',
         fieldApiName : STATUT_FIELD
@@ -53,15 +44,8 @@ export default class SmRecAllApps extends NavigationMixin(LightningElement) {
                 value : v.value
             }));
         }
-        if (error) {
-            console.error('getPicklistValues Statut error:',
-                JSON.stringify(error));
-        }
     }
 
-    // ══════════════════════════════════════════════
-    // WIRE — Picklist Decision
-    // ══════════════════════════════════════════════
     @wire(getPicklistValues, {
         recordTypeId : '$recordTypeId',
         fieldApiName : DECISION_FIELD
@@ -72,10 +56,6 @@ export default class SmRecAllApps extends NavigationMixin(LightningElement) {
                 label : v.label,
                 value : v.value
             }));
-        }
-        if (error) {
-            console.error('getPicklistValues Decision error:',
-                JSON.stringify(error));
         }
     }
 
@@ -104,21 +84,14 @@ export default class SmRecAllApps extends NavigationMixin(LightningElement) {
 
             let list = (data || []).map(c => this.mapCandidature(c));
 
-            // Filtre local pour entretien / sansEntretien
             if (this.activeFilter === 'entretien') {
                 list = list.filter(c =>
-                    String(c.Statut__c || '')
-                        .toLowerCase()
-                        .includes('entretien') &&
-                    !String(c.Statut__c || '')
-                        .toLowerCase()
-                        .includes('sans')
+                    String(c.Statut__c || '').toLowerCase().includes('entretien') &&
+                    !String(c.Statut__c || '').toLowerCase().includes('sans')
                 );
             } else if (this.activeFilter === 'sansEntretien') {
                 list = list.filter(c =>
-                    String(c.Statut__c || '')
-                        .toLowerCase()
-                        .includes('sans')
+                    String(c.Statut__c || '').toLowerCase().includes('sans')
                 );
             }
 
@@ -134,6 +107,10 @@ export default class SmRecAllApps extends NavigationMixin(LightningElement) {
     // ══════════════════════════════════════════════
     get hasCandidatures() {
         return this.candidatures && this.candidatures.length > 0;
+    }
+
+    get totalCandidatures() {
+        return this.candidatures ? this.candidatures.length : 0;
     }
 
     get selectedCandidatures() {
@@ -226,11 +203,7 @@ export default class SmRecAllApps extends NavigationMixin(LightningElement) {
     // ══════════════════════════════════════════════
     handleOpenActionModal() {
         if (!this.hasSelected) {
-            this.toast(
-                'Info',
-                'Sélectionnez au moins un candidat.',
-                'info'
-            );
+            this.toast('Info', 'Sélectionnez au moins un candidat.', 'info');
             return;
         }
         this.actionUpdates     = {};
@@ -275,7 +248,6 @@ export default class SmRecAllApps extends NavigationMixin(LightningElement) {
                 updatesJson: JSON.stringify(updates)
             });
 
-            // ✅ Mise à jour locale
             this.candidatures = this.candidatures.map(c => {
                 const upd = this.actionUpdates[c.Id];
                 if (!upd) return { ...c, isSelected: false };
@@ -283,19 +255,17 @@ export default class SmRecAllApps extends NavigationMixin(LightningElement) {
                 const newDecision = upd.decision  || c.Decision__c;
                 return {
                     ...c,
-                    Statut__c:   newStatut,
-                    Decision__c: newDecision,
-                    statutClass: this.getStatutClass(newStatut),
-                    isSelected:  false
+                    Statut__c:    newStatut,
+                    Decision__c:  newDecision,
+                    statutClass:  this.getStatutClass(newStatut),
+                    decisionClass: this.getDecisionClass(newDecision),
+                    hasDecision:  !!newDecision,
+                    isSelected:   false
                 };
             });
 
             this.closeActionModal();
-            this.toast(
-                'Succès',
-                'Candidatures mises à jour.',
-                'success'
-            );
+            this.toast('Succès', 'Candidatures mises à jour.', 'success');
             this.loadCandidatures();
 
         } catch (e) {
@@ -308,29 +278,50 @@ export default class SmRecAllApps extends NavigationMixin(LightningElement) {
     // ══════════════════════════════════════════════
     mapCandidature(c) {
         const score = c.Score_Matching__c || 0;
+
+        // ✅ Initiales avatar
+        const name     = c.Candidat__r?.Name || '';
+        const initiales = name.split(' ')
+            .map(n => n[0])
+            .join('')
+            .toUpperCase()
+            .substring(0, 2);
+
+        const decision = c.Decision__c || '';
+
         return {
             ...c,
-            candidateName : c.Candidat__r?.Name  || '—',
-            offreTitre    : c.Offre__r?.Titre__c  || '—',
-            hasCv         : !!c.CV_Public_URL__c,
-            isSelected    : false,
-            dateFmt       : c.DateDepot__c
-                ? new Date(c.DateDepot__c)
-                    .toLocaleDateString('fr-FR')
+            candidateName  : name || '—',
+            initiales      : initiales || '?',
+            offreTitre     : c.Offre__r?.Titre__c || '—',
+            hasCv          : !!c.CV_Public_URL__c,
+            hasDecision    : !!decision,
+            isSelected     : false,
+            dateFmt        : c.DateDepot__c
+                ? new Date(c.DateDepot__c).toLocaleDateString('fr-FR')
                 : '—',
-            statutClass   : this.getStatutClass(c.Statut__c),
-            scoreBarClass : this.getScoreBarClass(score),
-            scoreBarStyle : `width: ${score}%`
+            statutClass    : this.getStatutClass(c.Statut__c),
+            decisionClass  : this.getDecisionClass(decision),
+            scoreBarClass  : this.getScoreBarClass(score),
+            scoreBarStyle  : `width: ${score}%`
         };
     }
 
     getStatutClass(statut) {
         const s = String(statut || '').toLowerCase();
-        if (s === 'soumise')          return 'badge-statut badge-soumise';
-        if (s.includes('entretien') &&
-            !s.includes('sans'))      return 'badge-statut badge-entretien';
-        if (s.includes('sans'))       return 'badge-statut badge-sans-entretien';
+        if (s === 'soumise')                             return 'badge-statut badge-soumise';
+        if (s.includes('entretien') && !s.includes('sans')) return 'badge-statut badge-entretien';
+        if (s.includes('sans'))                          return 'badge-statut badge-sans-entretien';
         return 'badge-statut';
+    }
+
+    // ✅ Classe décision
+    getDecisionClass(decision) {
+        const d = String(decision || '').toLowerCase();
+        if (d.includes('accept')) return 'badge-decision badge-accepte';
+        if (d.includes('refus'))  return 'badge-decision badge-refuse';
+        if (d)                    return 'badge-decision badge-en-cours';
+        return 'badge-decision';
     }
 
     getScoreBarClass(score) {
@@ -340,9 +331,7 @@ export default class SmRecAllApps extends NavigationMixin(LightningElement) {
     }
 
     toast(title, message, variant) {
-        this.dispatchEvent(
-            new ShowToastEvent({ title, message, variant })
-        );
+        this.dispatchEvent(new ShowToastEvent({ title, message, variant }));
     }
 
     err(e) {
