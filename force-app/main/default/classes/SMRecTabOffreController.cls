@@ -44,8 +44,11 @@ public without sharing class SMRecTabOffreController {
             if (s == null) continue;
             s.totalCandidats++;
 
+            if (c.Statut__c == 'Soumise') {
+                s.soumiseCandidats++;
+            }
+
             if (c.Statut__c == 'Soumise' &&
-                c.DateDepot__c != null &&
                 c.DateDepot__c >= Date.today().addDays(-1)) {
                 s.newSubmissions++;
             }
@@ -259,6 +262,7 @@ public without sharing class SMRecTabOffreController {
         @AuraEnabled public Offre__c offre;
         @AuraEnabled public Id       offreId;
         @AuraEnabled public Integer  totalCandidats      = 0;
+        @AuraEnabled public Integer  soumiseCandidats    = 0;
         @AuraEnabled public Integer  newSubmissions      = 0;
         @AuraEnabled public Integer  enAttenteEntretien  = 0;
         @AuraEnabled public Integer  entretienPlanifie   = 0;

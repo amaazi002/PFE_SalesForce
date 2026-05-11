@@ -221,6 +221,12 @@
                 Les champs ont été remplis à partir de votre CV.
                 Vérifiez et modifiez si nécessaire.
               </p>
+              <template if:true={isJunior}>
+                <div class="junior-badge">
+                  <lightning-icon icon-name="utility:favorite" size="x-small" variant="success"></lightning-icon>
+                  <span class="junior-badge-text">{juniorAdvice}</span>
+                </div>
+              </template>
             </div>
           </div>
         </template>
@@ -229,42 +235,133 @@
         <div class="section-card">
           <div class="section-card__header">
             <lightning-icon icon-name="utility:knowledge_base" size="small"></lightning-icon>
-            <h2 class="section-title">Compétences &amp; Expérience</h2>
+            <h2 class="section-title">Compétences</h2>
           </div>
           <div class="section-card__body">
-            <div class="form-grid">
-              <lightning-input
-                type="number"
-                label="Années d'expérience"
-                value={anneesExperience}
-                onchange={onAnneesExperience}
-                min="0"
-                step="1"
-                class="full-width"
-                required>
-              </lightning-input>
-              <lightning-textarea
-                label="Compétences techniques"
-                value={tech}
-                onchange={onTech}
-                required
-                class="full-width">
-              </lightning-textarea>
-              <lightning-textarea
-                label="Expérience professionnelle"
-                value={xp}
-                onchange={onXp}
-                required
-                class="full-width">
-              </lightning-textarea>
-              <lightning-textarea
-                label="Compétences personnelles"
-                value={soft}
-                onchange={onSoft}
-                required
-                class="full-width">
-              </lightning-textarea>
+
+            <!-- Années d'expérience -->
+            <lightning-input
+              type="number"
+              label="Années d'expérience"
+              value={anneesExperience}
+              onchange={onAnneesExperience}
+              min="0" step="1"
+              class="full-width"
+              required>
+            </lightning-input>
+
+            <!-- Hard Skills -->
+            <div class="skills-section">
+              <label class="skills-label">Compétences techniques (Hard Skills) <abbr title="required" class="slds-required">*</abbr></label>
+              <div class="skills-input-row">
+                <input
+                  type="text"
+                  class="skill-text-input"
+                  placeholder="Ex: Salesforce Apex, Python..."
+                  value={newHardSkill}
+                  oninput={onNewHardSkillInput}
+                  onkeydown={onHardSkillKeydown} />
+                <button class="btn-add-skill" onclick={addHardSkill}>+ Ajouter</button>
+              </div>
+              <div class="pills-container">
+                <template for:each={hardSkills} for:item="skill">
+                  <span key={skill.id} class="skill-pill skill-pill--hard">
+                    {skill.label}
+                    <button class="pill-remove" data-id={skill.id} onclick={removeHardSkill}>✕</button>
+                  </span>
+                </template>
+                <template if:false={hasHardSkills}>
+                  <span class="pills-empty">Aucune compétence technique ajoutée</span>
+                </template>
+              </div>
             </div>
+
+            <!-- Soft Skills -->
+            <div class="skills-section">
+              <label class="skills-label">Compétences personnelles (Soft Skills) <abbr title="required" class="slds-required">*</abbr></label>
+              <div class="skills-input-row">
+                <input
+                  type="text"
+                  class="skill-text-input"
+                  placeholder="Ex: Communication, Leadership..."
+                  value={newSoftSkill}
+                  oninput={onNewSoftSkillInput}
+                  onkeydown={onSoftSkillKeydown} />
+                <button class="btn-add-skill btn-add-skill--soft" onclick={addSoftSkill}>+ Ajouter</button>
+              </div>
+              <div class="pills-container">
+                <template for:each={softSkills} for:item="skill">
+                  <span key={skill.id} class="skill-pill skill-pill--soft">
+                    {skill.label}
+                    <button class="pill-remove" data-id={skill.id} onclick={removeSoftSkill}>✕</button>
+                  </span>
+                </template>
+                <template if:false={hasSoftSkills}>
+                  <span class="pills-empty">Aucune compétence personnelle ajoutée</span>
+                </template>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Expériences -->
+        <div class="section-card">
+          <div class="section-card__header">
+            <lightning-icon icon-name="utility:work_order" size="small"></lightning-icon>
+            <h2 class="section-title">Expériences professionnelles</h2>
+          </div>
+          <div class="section-card__body">
+            <template for:each={experiences} for:item="exp">
+              <div key={exp.id} class="experience-card">
+                <div class="exp-header">
+                  <lightning-icon icon-name="utility:company" size="x-small"></lightning-icon>
+                  <span class="exp-title">Expérience</span>
+                  <button class="btn-remove-exp" data-id={exp.id} onclick={removeExperience}>✕ Supprimer</button>
+                </div>
+                <div class="exp-body">
+                  <input
+                    type="text"
+                    class="exp-input exp-input--full"
+                    placeholder="Poste (ex: Consultant Salesforce)"
+                    value={exp.poste}
+                    data-id={exp.id}
+                    data-field="poste"
+                    oninput={onExpChange} />
+                  <div class="exp-dates">
+                    <div class="exp-date-group">
+                      <label class="exp-date-label">Date de début</label>
+                      <input
+                        type="number"
+                        class="exp-input exp-input--year"
+                        placeholder="2020"
+                        value={exp.dateDebut}
+                        data-id={exp.id}
+                        data-field="dateDebut"
+                        oninput={onExpChange} />
+                    </div>
+                    <div class="exp-date-group">
+                      <label class="exp-date-label">Date de fin</label>
+                      <input
+                        type="number"
+                        class="exp-input exp-input--year"
+                        placeholder="2024"
+                        value={exp.dateFin}
+                        data-id={exp.id}
+                        data-field="dateFin"
+                        oninput={onExpChange} />
+                    </div>
+                  </div>
+                  <textarea
+                    class="exp-textarea"
+                    placeholder="Description du poste..."
+                    data-id={exp.id}
+                    data-field="description"
+                    oninput={onExpChange}>{exp.description}</textarea>
+                </div>
+              </div>
+            </template>
+            <button class="btn-add-exp" onclick={addExperience}>+ Ajouter une expérience</button>
           </div>
         </div>
 

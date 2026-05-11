@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>up_vis_invi_clot</fullName>
+    <active>true</active>
+    <errorConditionFormula>AND(
+    ISPICKVAL(Statut__c, &quot;clôturée&quot;),
+    ISPICKVAL(Visible_aux_candidat__c, &quot;Visible&quot;)
+)</errorConditionFormula>
+    <errorMessage>..</errorMessage>
+</ValidationRule>

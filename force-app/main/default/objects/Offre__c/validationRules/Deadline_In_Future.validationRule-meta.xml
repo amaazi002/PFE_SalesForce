@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Deadline_In_Future</fullName>
+    <active>true</active>
+    <errorConditionFormula>AND(
+ Deadline__c &lt; Today(),
+ NOT(ISPICKVAL(Statut__c, 'Clôturée'))
+)</errorConditionFormula>
+    <errorDisplayField>Deadline__c</errorDisplayField>
+    <errorMessage>La date limite doit être ultérieure à aujourd’hui</errorMessage>
+</ValidationRule>

@@ -1,0 +1,124 @@
+\documentclass[a4paper,12pt]{report}
+
+
+%\usepackage[nottoc]{tocbibind}
+%\usepackage{multirow}
+ %\usepackage[backend=biber, style=numeric,]{biblatex}
+
+%\DefineBibliographyStrings{french}{bibliography = {Webographie}}
+
+%\addbibresource{allbiblio.bib}
+%added%
+\usepackage{csquotes}
+\usepackage{pifont} % Pour utiliser les symboles de ding
+
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{helvet}
+\usepackage{graphicx}
+\usepackage[frenchb]{babel} 
+\usepackage{lipsum}
+\usepackage{pdfpages}
+%\usepackage{arabtex}
+\usepackage[utf8]{inputenc}
+\setcounter{secnumdepth}{10}
+
+\usepackage{algorithmicx}
+\usepackage[ruled]{algorithm}
+\usepackage{algpseudocode}
+\usepackage{enumitem}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage[table, svgnames, dvipsnames]{xcolor}
+\usepackage[justification=centering]{caption}
+\captionsetup[figure]{font=small}
+\usepackage[top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm]{geometry}
+\usepackage{setspace}
+\usepackage{fancyhdr}
+\usepackage{minitoc}
+%\setstretch{1.25}
+%\usepackage[utf8x]{inputenc} %
+\setcounter{tocdepth}{10}     % Dans la table des matieres
+\usepackage{lettrine}
+
+ \graphicspath{{figures//}}
+ \usepackage{multicol}
+% permet de faire une table des matieres par chapitre
+
+% bibliographie par chapitre :
+%     * mettre \bibliography et \bibliographystyle dans chaque fichier inclu
+%\usepackage[sectionbib]{chapterbib}%
+%\usepackage[french]{minitoc}   % permet de faire une table des matieres par chapitre
+\usepackage{hyperref}
+ \usepackage{fancyhdr}
+ 
+ \pagestyle{fancy}
+ 
+ \renewcommand{\headrulewidth}{1pt}
+ \fancyhead[C]{\leftmark}
+ \fancyhead[L]{}
+ \fancyhead[R]{}
+ 
+ \renewcommand{\footrulewidth}{1pt}
+ \fancyfoot[C]{\textbf{page \thepage}} 
+ \fancyfoot[L]{}
+ \fancyfoot[R]{}
+
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+\newcommand{\blap}[1]{\vbox to 0pt{#1\vss}}
+\newcommand\AtUpperLeftCorner[3]{%
+  \put(\LenToUnit{#1},\LenToUnit{\dimexpr\paperheight-#2}){\blap{#3}}%
+}
+\newcommand\AtUpperRightCorner[3]{%
+  \put(\LenToUnit{\dimexpr\paperwidth-#1},\LenToUnit{\dimexpr\paperheight-#2}){\blap{\llap{#3}}}%
+}
+ 
+\begin{document} 
+\hypersetup{hidelinks}
+
+
+% preparation des minitocs
+
+\onehalfspacing
+
+\doparttoc
+\pagenumbering{roman}
+
+
+
+
+%\include{garde1.pdf}
+\includepdf[pages=1]{garde1.pdf}
+\includepdf[pages=2]{garde1.pdf}
+\include{abstract}
+\include{remerciements}
+\include{dedicaces}
+
+\dominitoc
+\tableofcontents
+\listoffigures \mtcaddchapter
+\listoftables  \mtcaddchapter
+
+
+ %for openright
+% inclusion des chapitres 
+\include{abr}
+\pagenumbering{arabic}
+\include{intro}
+\include{chap1}
+\include{chap2}
+\include{chap3}
+\include{chap4}
+\include{chap5}
+\include{chap6}
+\include{chap7}
+\include{conclu}
+\include{ref}
+%\include{abstract}
+%\include{ref}
+%\include{neto}
+%\tracingall
+\bibliographystyle{plain}
+\bibliography{allbiblio}
+\end{document}

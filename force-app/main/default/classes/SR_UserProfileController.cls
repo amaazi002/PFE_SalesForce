@@ -1,4 +1,4 @@
-public with sharing class SR_UserProfileController {
+public without sharing class SR_UserProfileController {
 
     @AuraEnabled(cacheable=true)
     public static Map<String, String> getUserProfile() {

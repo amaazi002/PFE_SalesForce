@@ -17,7 +17,8 @@ public without sharing class SR_ApplicationController {
         String  dernierDiplome,
         String  niveauEtude,
         String  ecoleUniversite,
-        Integer anneeObtention
+        Integer anneeObtention,
+        Boolean isJunior
     ) {
         if (offreId == null) {
             throw new AuraHandledException('Offre requise (offreId manquant).');
@@ -39,8 +40,53 @@ public without sharing class SR_ApplicationController {
             } catch (Exception e) {}
         }
 
-        if (contactId == null && String.isNotBlank(firstName)
-            && String.isNotBlank(lastName) && String.isNotBlank(email)) {
+        // ── Vérification doublon ──────────────────────────────────────
+        // Si le candidat existe déjà, vérifier qu'il n'a pas déjà postulé
+        if (contactId != null) {
+            List<Candidature__c> existantes = [
+                SELECT Id FROM Candidature__c
+                WHERE Offre__c    = :offreId
+                AND   Candidat__c = :contactId
+                LIMIT 1
+            ];
+            if (!existantes.isEmpty()) {
+                throw new AuraHandledException(
+                    'Vous avez déjà postulé à cette offre. Vous ne pouvez pas soumettre plusieurs candidatures pour la même offre.'
+                );
+            }
+        }
+
+        if (contactId != null) {
+            // ✅ CORRECTION : Mettre à jour le contact existant avec les nouvelles infos
+            try {
+                Contact cToUpdate = new Contact(Id = contactId);
+                if (String.isNotBlank(firstName)) cToUpdate.FirstName = firstName;
+                if (String.isNotBlank(lastName))  cToUpdate.LastName = lastName;
+                if (String.isNotBlank(telephone)) cToUpdate.Phone = telephone;
+                if (String.isNotBlank(situationFamiliale)) cToUpdate.SituationFamiliale__c = situationFamiliale;
+
+                if (String.isNotBlank(dateNaissance)) {
+                    try {
+                        cToUpdate.Birthdate = Date.valueOf(dateNaissance);
+                    } catch (Exception e) {}
+                }
+
+                try {
+                    Schema.DescribeFieldResult sx = Contact.Sexe__c.getDescribe();
+                    if (sx.getType() == Schema.DisplayType.Picklist && String.isNotBlank(sexe)) {
+                        Set<String> allowed = new Set<String>();
+                        for (Schema.PicklistEntry pe : sx.getPicklistValues()) {
+                            allowed.add(pe.getValue());
+                        }
+                        cToUpdate.put('Sexe__c', allowed.contains(sexe) ? sexe : null);
+                    }
+                } catch (Exception e) {}
+
+                update cToUpdate;
+            } catch (Exception e) {
+                System.debug('Erreur lors de la mise à jour du contact: ' + e.getMessage());
+            }
+        } else if (String.isNotBlank(firstName) && String.isNotBlank(lastName) && String.isNotBlank(email)) {
             try {
                 Account acc = [SELECT Id FROM Account WHERE Name = 'Candidats' LIMIT 1];
 
@@ -54,10 +100,10 @@ public without sharing class SR_ApplicationController {
                     AccountId             = acc.Id
                 );
 
-                // ✅ CORRECTION 2 : DateNaissance__c ajouté via put()
+                // ✅ CORRECTION 2 : Birthdate
                 if (String.isNotBlank(dateNaissance)) {
                     try {
-                        c.put('DateNaissance__c', Date.valueOf(dateNaissance));
+                        c.Birthdate = Date.valueOf(dateNaissance);
                     } catch (Exception e) {}
                 }
 
@@ -94,6 +140,7 @@ public without sharing class SR_ApplicationController {
             NiveauEtude__c       = niveauEtude,
             EcoleUniversite__c   = ecoleUniversite,
             AnneeObtention__c    = anneeObtention
+            // Is_Junior__c      = isJunior (Field doesn't exist yet)
         );
 
         // ── DateDepot__c ──────────────────────────────────────────────

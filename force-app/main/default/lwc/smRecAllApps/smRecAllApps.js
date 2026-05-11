@@ -7,6 +7,7 @@ import CANDIDATURE_OBJECT                from '@salesforce/schema/Candidature__c
 import STATUT_FIELD                      from '@salesforce/schema/Candidature__c.Statut__c';
 import DECISION_FIELD                    from '@salesforce/schema/Candidature__c.Decision__c';
 import getAllCandidatures                 from '@salesforce/apex/SMRecTabOffreController.getAllCandidatures';
+import getCandidatures                   from '@salesforce/apex/SMRecTabOffreController.getCandidatures';
 import updateCandidaturesGrouped         from '@salesforce/apex/SMRecTabOffreController.updateCandidaturesGrouped';
 
 export default class SmRecAllApps extends NavigationMixin(LightningElement) {
@@ -16,6 +17,7 @@ export default class SmRecAllApps extends NavigationMixin(LightningElement) {
     @track activeFilter      = 'Tous';
     @track isActionModalOpen = false;
     @track actionUpdates     = {};
+    @track sortOrder         = 'desc'; // 'asc' or 'desc'
 
     @track statutOptions     = [];
     @track decisionOptions   = [];
@@ -74,16 +76,32 @@ export default class SmRecAllApps extends NavigationMixin(LightningElement) {
     // ══════════════════════════════════════════════
     async loadCandidatures() {
         try {
-            const data = await getAllCandidatures({
-                searchTerm   : this.searchTerm,
-                statutFilter : (this.activeFilter === 'Tous' ||
-                                this.activeFilter === 'entretien' ||
-                                this.activeFilter === 'sansEntretien')
-                    ? '' : this.activeFilter
-            });
+            let data;
+
+            // Si on vient d'une offre spécifique, charger uniquement ses candidatures
+            if (this.offreId) {
+                data = await getCandidatures({ offreId: this.offreId });
+            } else {
+                data = await getAllCandidatures({
+                    searchTerm   : this.searchTerm,
+                    statutFilter : (this.activeFilter === 'Tous' ||
+                                    this.activeFilter === 'entretien' ||
+                                    this.activeFilter === 'sansEntretien')
+                        ? '' : this.activeFilter
+                });
+            }
 
             let list = (data || []).map(c => this.mapCandidature(c));
 
+            // Filtre par recherche côté client si offreId (car getCandidatures n'a pas de searchTerm)
+            if (this.offreId && this.searchTerm) {
+                const term = this.searchTerm.toLowerCase();
+                list = list.filter(c =>
+                    c.candidateName.toLowerCase().includes(term)
+                );
+            }
+
+            // Filtre par statut côté client
             if (this.activeFilter === 'entretien') {
                 list = list.filter(c =>
                     String(c.Statut__c || '').toLowerCase().includes('entretien') &&
@@ -93,13 +111,38 @@ export default class SmRecAllApps extends NavigationMixin(LightningElement) {
                 list = list.filter(c =>
                     String(c.Statut__c || '').toLowerCase().includes('sans')
                 );
+            } else if (this.activeFilter === 'Soumise' && this.offreId) {
+                list = list.filter(c =>
+                    String(c.Statut__c || '').toLowerCase() === 'soumise'
+                );
             }
+
+            // Tri par score
+            list = this.sortByScore(list);
 
             this.candidatures = list;
 
         } catch (e) {
             this.toast('Erreur', this.err(e), 'error');
         }
+    }
+
+    // ══════════════════════════════════════════════
+    // TRI PAR SCORE
+    // ══════════════════════════════════════════════
+    sortByScore(list) {
+        return [...list].sort((a, b) => {
+            const scoreA = a.Score_Matching__c || 0;
+            const scoreB = b.Score_Matching__c || 0;
+            return this.sortOrder === 'desc'
+                ? scoreB - scoreA
+                : scoreA - scoreB;
+        });
+    }
+
+    handleSortToggle(event) {
+        this.sortOrder = event.currentTarget.dataset.order;
+        this.candidatures = this.sortByScore(this.candidatures);
     }
 
     // ══════════════════════════════════════════════
@@ -130,6 +173,16 @@ export default class SmRecAllApps extends NavigationMixin(LightningElement) {
                this.candidatures.every(c => c.isSelected);
     }
 
+    get hasOffreContext() {
+        return !!this.offreId;
+    }
+
+    get pageTitle() {
+        return this.offreTitre
+            ? `Candidatures — ${this.offreTitre}`
+            : 'Toutes les candidatures';
+    }
+
     get btnTousClass() {
         return this.activeFilter === 'Tous'
             ? 'filter-btn filter-btn-active' : 'filter-btn';
@@ -148,6 +201,24 @@ export default class SmRecAllApps extends NavigationMixin(LightningElement) {
     get btnSansEntretienClass() {
         return this.activeFilter === 'sansEntretien'
             ? 'filter-btn filter-btn-active' : 'filter-btn';
+    }
+
+    get isSortDesc() {
+        return this.sortOrder === 'desc';
+    }
+
+    get isSortAsc() {
+        return this.sortOrder === 'asc';
+    }
+
+    get sortDescClass() {
+        return this.sortOrder === 'desc'
+            ? 'sort-btn sort-btn-active' : 'sort-btn';
+    }
+
+    get sortAscClass() {
+        return this.sortOrder === 'asc'
+            ? 'sort-btn sort-btn-active' : 'sort-btn';
     }
 
     // ══════════════════════════════════════════════
@@ -215,6 +286,10 @@ export default class SmRecAllApps extends NavigationMixin(LightningElement) {
         this.actionUpdates     = {};
     }
 
+    stopPropagation(event) {
+        event.stopPropagation();
+    }
+
     handleNewStatutChange(event) {
         const id    = event.target.dataset.id;
         const value = event.target.value;
@@ -279,7 +354,6 @@ export default class SmRecAllApps extends NavigationMixin(LightningElement) {
     mapCandidature(c) {
         const score = c.Score_Matching__c || 0;
 
-        // ✅ Initiales avatar
         const name     = c.Candidat__r?.Name || '';
         const initiales = name.split(' ')
             .map(n => n[0])
@@ -293,7 +367,7 @@ export default class SmRecAllApps extends NavigationMixin(LightningElement) {
             ...c,
             candidateName  : name || '—',
             initiales      : initiales || '?',
-            offreTitre     : c.Offre__r?.Titre__c || '—',
+            offreTitre     : c.Offre__r?.Titre__c || this.offreTitre || '—',
             hasCv          : !!c.CV_Public_URL__c,
             hasDecision    : !!decision,
             isSelected     : false,
@@ -315,7 +389,6 @@ export default class SmRecAllApps extends NavigationMixin(LightningElement) {
         return 'badge-statut';
     }
 
-    // ✅ Classe décision
     getDecisionClass(decision) {
         const d = String(decision || '').toLowerCase();
         if (d.includes('accept')) return 'badge-decision badge-accepte';

@@ -550,115 +550,92 @@ def get_niveau(score):
     return 'Faible'
 
 
+# ══════════════════════════════════════
+# HELPERS SCORING
+# ══════════════════════════════════════
+
+def spacy_similarity(texte_a, texte_b):
+    """Calcule la similarité sémantique entre deux textes via SpaCy."""
+    if not nlp or not texte_a or not texte_b:
+        return 0.0
+    try:
+        doc_a = nlp(texte_a[:2000])
+        doc_b = nlp(texte_b[:2000])
+        return doc_a.similarity(doc_b)
+    except Exception as e:
+        logging.warning(f"SpaCy similarity: {e}")
+        return 0.0
+
+def extract_mots(texte, min_len=2):
+    """Extrait les mots significatifs d'un texte."""
+    mots_vides = {
+        'les', 'des', 'une', 'est', 'pour', 'avec', 'dans',
+        'sur', 'par', 'qui', 'que', 'aux', 'the', 'and',
+        'for', 'with', 'this', 'that', 'are'
+    }
+    mots = set(re.findall(r'[a-zA-Z0-9#+.\-]{%d,}' % min_len, texte))
+    return {m for m in mots if m not in mots_vides}
+
+def score_matching_hybride(texte_a, texte_b, max_score):
+    """Matching hybride : 60% SpaCy + 40% Mots communs."""
+    if not texte_a or not texte_b:
+        return max_score // 3
+    
+    sim_spacy = spacy_similarity(texte_a, texte_b) if nlp else 0
+    score_spacy = round(sim_spacy * max_score * 0.6)
+    
+    mots_a = extract_mots(texte_a)
+    mots_b = extract_mots(texte_b)
+    if mots_a and mots_b:
+        exact = mots_a & mots_b
+        partiel = set()
+        for mb in mots_b:
+            if mb in exact: continue
+            for ma in mots_a:
+                if (mb in ma or ma in mb) and abs(len(ma)-len(mb)) <= 3:
+                    partiel.add(mb); break
+        ratio = (len(exact) + len(partiel) * 0.7) / len(mots_b)
+        score_regex = round(min(ratio, 1.0) * max_score * 0.4)
+    else:
+        score_regex = 0
+    
+    bonus = max_score * 0.1 if len(mots_a) > 20 else 0
+    return min(round(score_spacy + score_regex + bonus), max_score)
+
 def calculate_score(cv_data, competences_requises, description_offre):
     score_total = 0
     details     = {}
-
-    texte_offre = (
-        (competences_requises or '') + ' ' +
-        (description_offre    or '')
-    ).lower().strip()
-
-    texte_cv = (
-        (cv_data.get('competencesTech',  '') or '') + ' ' +
-        (cv_data.get('experienceProf',   '') or '') + ' ' +
-        (cv_data.get('competencesPerso', '') or '') + ' ' +
-        (cv_data.get('dernierDiplome',   '') or '') + ' ' +
-        (cv_data.get('ecoleUniversite',  '') or '')
-    ).lower().strip()
-
+    texte_offre = ((competences_requises or '') + ' ' + (description_offre or '')).lower().strip()
     # ══════════════════════════════════════
-    # FONCTION HELPER — Similarité SpaCy
+    # 0. Détection Profil Junior / Nouveau Diplômé
     # ══════════════════════════════════════
-    def spacy_similarity(texte_a, texte_b):
-        """
-        Calcule la similarité sémantique entre deux textes
-        via les vecteurs de mots SpaCy
-        → Comprend les synonymes et le sens
-        """
-        if not nlp or not texte_a or not texte_b:
-            return 0.0
+    annee_courante = datetime.datetime.now().year
+    annee_diplome  = cv_data.get('anneeObtention')
+    is_junior      = False
+    
+    if annee_diplome:
         try:
-            doc_a = nlp(texte_a[:2000])
-            doc_b = nlp(texte_b[:2000])
-            # ✅ SpaCy calcule la similarité cosinus
-            # entre les vecteurs des deux textes
-            sim = doc_a.similarity(doc_b)
-            logging.info(f"SpaCy similarity: {sim:.3f}")
-            return sim
-        except Exception as e:
-            logging.warning(f"SpaCy similarity: {e}")
-            return 0.0
-
-    def extract_mots(texte, min_len=2):
-        """Extrait les mots significatifs"""
-        mots_vides = {
-            'les', 'des', 'une', 'est', 'pour', 'avec', 'dans',
-            'sur', 'par', 'qui', 'que', 'aux', 'the', 'and',
-            'for', 'with', 'this', 'that', 'are'
-        }
-        mots = set(re.findall(
-            r'[a-zA-Z0-9#+.\-]{%d,}' % min_len, texte
-        ))
-        return {m for m in mots if m not in mots_vides}
-
-    def score_matching_hybride(texte_a, texte_b, max_score):
-        """
-        Matching hybride :
-        ✅ 60% SpaCy (similarité sémantique)
-        ✅ 40% Regex (mots communs)
-        """
-        if not texte_a or not texte_b:
-            return max_score // 3
-
-        # ✅ Score SpaCy (similarité sémantique)
-        if nlp:
-            sim_spacy  = spacy_similarity(texte_a, texte_b)
-            score_spacy = round(sim_spacy * max_score * 0.6)
-        else:
-            score_spacy = 0
-
-        # ✅ Score Regex (mots communs)
-        mots_a = extract_mots(texte_a)
-        mots_b = extract_mots(texte_b)
-
-        if mots_a and mots_b:
-            exact   = mots_a & mots_b
-            partiel = set()
-            for mot_b in mots_b:
-                if mot_b in exact:
-                    continue
-                for mot_a in mots_a:
-                    if (mot_b in mot_a or mot_a in mot_b) and \
-                       abs(len(mot_a) - len(mot_b)) <= 3:
-                        partiel.add(mot_b)
-                        break
-
-            ratio       = (len(exact) + len(partiel) * 0.7) / len(mots_b)
-            ratio       = min(ratio, 1.0)
-            score_regex = round(ratio * max_score * 0.4)
-        else:
-            score_regex = 0
-
-        # ✅ Bonus si CV riche
-        bonus = max_score * 0.1 if len(mots_a) > 20 else 0
-
-        score = round(score_spacy + score_regex + bonus)
-        return min(score, max_score)
+            val_annee = int(str(annee_diplome).strip())
+            # Si diplômé depuis moins de 3 ans
+            if annee_courante - val_annee <= 3:
+                is_junior = True
+        except (ValueError, TypeError): 
+            pass
 
     # ══════════════════════════════════════
-    # 1. Compétences techniques (40 points)
+    # 1. Compétences techniques (45 pts pour junior, 40 sinon)
     # ══════════════════════════════════════
     tech_cv  = cv_data.get('competencesTech', '').lower()
     comp_req = competences_requises.lower() if competences_requises else ''
+    max_tech = 45 if is_junior else 40
 
     if tech_cv and comp_req:
-        score_tech = score_matching_hybride(tech_cv, comp_req, 40)
+        score_tech = score_matching_hybride(tech_cv, comp_req, max_tech)
     elif tech_cv and texte_offre:
-        score_tech = score_matching_hybride(tech_cv, texte_offre, 40)
+        score_tech = score_matching_hybride(tech_cv, texte_offre, max_tech)
         score_tech = round(score_tech * 0.8)
     elif tech_cv:
-        score_tech = 20
+        score_tech = max_tech // 2
     else:
         score_tech = 0
 
@@ -666,108 +643,85 @@ def calculate_score(cv_data, competences_requises, description_offre):
     score_total += score_tech
 
     # ══════════════════════════════════════
-    # 2. Expérience (25 points)
+    # 2. Expérience / Stages (20 pts pour junior, 25 sinon)
     # ══════════════════════════════════════
     xp_cv      = cv_data.get('experienceProf', '').lower()
     desc_offre = description_offre.lower() if description_offre else ''
+    max_xp     = 20 if is_junior else 25
 
     if xp_cv and desc_offre:
-        score_xp = score_matching_hybride(xp_cv, desc_offre, 25)
+        score_xp = score_matching_hybride(xp_cv, desc_offre, max_xp)
     elif xp_cv and texte_offre:
-        score_xp = score_matching_hybride(xp_cv, texte_offre, 25)
-        score_xp = round(score_xp * 0.8)
-    elif xp_cv:
-        score_xp = 12
+        score_xp = score_matching_hybride(xp_cv, texte_offre, max_xp)
     else:
         score_xp = 0
+
+    # ✅ BONUS JUNIOR : Valorisation des stages et projets
+    if is_junior and xp_cv:
+        keywords_junior = ['stage', 'internship', 'projet', 'pfe', 'pfa', 'alternance']
+        if any(w in xp_cv for w in keywords_junior):
+            score_xp = min(score_xp + 5, max_xp)
 
     details['experience'] = score_xp
     score_total += score_xp
 
     # ══════════════════════════════════════
-    # 3. Années expérience (15 points)
+    # 3. Années expérience (10 pts pour junior, 15 sinon)
     # ══════════════════════════════════════
     annees_cv        = cv_data.get('anneesExperience', 0) or 0
-    annees_req_match = re.search(
-        r'(\d+)\s*(?:\+\s*)?ans?\s*d[\'e]?\s*exp[eé]riences?',
-        texte_offre, re.IGNORECASE
-    )
-
-    if annees_req_match:
-        annees_req = int(annees_req_match.group(1))
-        if annees_cv >= annees_req:         score_annees = 15
-        elif annees_cv >= annees_req * 0.7: score_annees = 10
-        elif annees_cv >= annees_req * 0.5: score_annees = 7
-        elif annees_cv > 0:                 score_annees = 3
-        else:                               score_annees = 0
+    max_annees       = 10 if is_junior else 15
+    
+    # Si junior, on est plus indulgent sur les années
+    if is_junior:
+        if annees_cv >= 1:   score_annees = 10
+        elif annees_cv > 0:  score_annees = 7
+        else:                score_annees = 4 # Potentiel
     else:
-        if annees_cv >= 5:   score_annees = 15
-        elif annees_cv >= 3: score_annees = 12
-        elif annees_cv >= 1: score_annees = 8
-        else:                score_annees = 5
+        annees_req_match = re.search(r'(\d+)\s*ans?', texte_offre, re.IGNORECASE)
+        if annees_req_match:
+            annees_req = int(annees_req_match.group(1))
+            if annees_cv >= annees_req:         score_annees = 15
+            elif annees_cv >= annees_req * 0.7: score_annees = 10
+            else:                               score_annees = 5
+        else:
+            if annees_cv >= 5:   score_annees = 15
+            elif annees_cv >= 3: score_annees = 12
+            else:                score_annees = 5
 
     details['annees_experience'] = score_annees
     score_total += score_annees
 
     # ══════════════════════════════════════
-    # 4. Formation / Diplôme (10 points)
+    # 4. Formation / Diplôme (15 pts pour junior, 10 sinon)
     # ══════════════════════════════════════
     diplome_cv = cv_data.get('dernierDiplome', '').lower()
+    max_dipl   = 15 if is_junior else 10
 
     niveaux = {
-        'doctorat' : 5, 'phd'     : 5,
-        'master'   : 4, 'mastère' : 4, 'bac+5' : 4,
-        'licence'  : 3, 'bac+3'   : 3, 'bac+4' : 3,
-        'bts'      : 2, 'dut'     : 2, 'bac+2' : 2,
-        'bac'      : 1
+        'doctorat': 5, 'phd': 5, 'master': 4, 'licence': 3, 'bac+5': 4, 'ingénieur': 4, 'bac': 1
     }
-
-    niveau_cv  = 0
-    niveau_req = 0
-
+    niveau_cv = 0
     for niveau, val in niveaux.items():
-        if niveau in diplome_cv:
-            niveau_cv = val
-            break
+        if niveau in diplome_cv: niveau_cv = val; break
 
-    for niveau, val in niveaux.items():
-        if niveau in texte_offre:
-            niveau_req = val
-            break
+    score_diplome = min(niveau_cv * 3, max_dipl) if niveau_cv > 0 else (max_dipl // 2)
+    
+    # Bonus si mention ou école prestigieuse (simulé ici par similarité)
+    if diplome_cv and texte_offre:
+        sim = spacy_similarity(diplome_cv, texte_offre)
+        score_diplome = min(score_diplome + round(sim * 5), max_dipl)
 
-    # ✅ SpaCy — Similarité diplôme vs offre
-    if nlp and diplome_cv and texte_offre:
-        sim_diplome = spacy_similarity(diplome_cv, texte_offre)
-        bonus_diplome = round(sim_diplome * 3)
-    else:
-        bonus_diplome = 0
-
-    if niveau_req == 0:
-        score_diplome = min(niveau_cv * 2, 10) if niveau_cv > 0 else 5
-    elif niveau_cv >= niveau_req:
-        score_diplome = 10
-    elif niveau_cv == niveau_req - 1:
-        score_diplome = 7
-    elif niveau_cv > 0:
-        score_diplome = 4
-    else:
-        score_diplome = 2
-
-    score_diplome = min(score_diplome + bonus_diplome, 10)
     details['formation'] = score_diplome
     score_total += score_diplome
 
     # ══════════════════════════════════════
-    # 5. Soft skills (10 points)
+    # 5. Soft skills (10 points fixe)
     # ══════════════════════════════════════
     soft_cv = cv_data.get('competencesPerso', '').lower()
-
     if soft_cv and texte_offre:
         score_soft = score_matching_hybride(soft_cv, texte_offre, 10)
-        if len(soft_cv) > 50:
-            score_soft = max(score_soft, 5)
     elif soft_cv:
-        score_soft = 5
+        score_soft = 6
     else:
         score_soft = 0
 
@@ -775,18 +729,22 @@ def calculate_score(cv_data, competences_requises, description_offre):
     score_total += score_soft
 
     # ══════════════════════════════════════
-    # Score final
+    # Score final et Message d'aide
     # ══════════════════════════════════════
     score_final = min(score_total, 100)
-
-    logging.info(f"Détails : {details}")
-    logging.info(f"Score final : {score_final}")
-
-    return {
+    
+    result = {
         'score'  : score_final,
         'niveau' : get_niveau(score_final),
-        'details': details
+        'details': details,
+        'is_junior': is_junior
     }
+
+    if is_junior:
+        result['conseil'] = "Profil à fort potentiel : Jeune diplômé valorisé par ses compétences et sa formation."
+
+    logging.info(f"Final Result: {result}")
+    return result
 
 # ══════════════════════════════════════════════
 # ROUTES

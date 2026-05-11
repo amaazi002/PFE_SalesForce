@@ -3,277 +3,221 @@
 
         <!-- Header -->
         <div class="rec-header">
-            <button class="btn-back" onclick={handleBack}>← Retour</button>
-            <div class="rec-header-info">
-                <h1 class="rec-title">
-                    Toutes les candidatures
-                    <template if:true={offreTitre}>
-                        — {offreTitre}
-                    </template>
-                </h1>
-                <p class="rec-subtitle">{totalCandidatures} candidature(s)</p>
+            <div class="rec-header-left">
+                <template if:true={hasOffreContext}>
+                    <button class="btn-back" onclick={handleBack}>
+                        ← Retour
+                    </button>
+                </template>
+                <div class="rec-header-icon">📋</div>
+                <div>
+                    <h1 class="rec-title">{pageTitle}</h1>
+                    <p class="rec-subtitle">{totalCandidatures} candidature(s)</p>
+                </div>
             </div>
         </div>
 
         <!-- Filtres -->
-        <div class="filters-bar">
-            <div class="search-wrapper">
-                <span class="search-icon">🔍</span>
-                <input
-                    type="text"
-                    class="search-input"
-                    placeholder="Rechercher par nom..."
-                    value={searchTerm}
-                    oninput={handleSearch}
-                />
+        <div class="rec-filters">
+            <div class="rec-filters-left">
+                <div class="search-box">
+                    <input
+                        type="text"
+                        class="search-input"
+                        placeholder="🔍 Rechercher un candidat..."
+                        value={searchTerm}
+                        onchange={handleSearch} />
+                </div>
+                <div class="filter-group">
+                    <button class={btnTousClass} data-filter="Tous" onclick={handleFilterStatut}>
+                        Tous
+                    </button>
+                    <button class={btnSoumiseClass} data-filter="Soumise" onclick={handleFilterStatut}>
+                        Soumise
+                    </button>
+                    <button class={btnEntretienClass} data-filter="entretien" onclick={handleFilterStatut}>
+                        En entretien
+                    </button>
+                    <button class={btnSansEntretienClass} data-filter="sansEntretien" onclick={handleFilterStatut}>
+                        Sans entretien
+                    </button>
+                </div>
             </div>
-            <div class="filter-buttons">
-                <button
-                    class={btnTousClass}
-                    data-filter="Tous"
-                    onclick={handleFilterStatut}>
-                    Tous
-                </button>
-                <button
-                    class={btnSoumiseClass}
-                    data-filter="Soumise"
-                    onclick={handleFilterStatut}>
-                    Soumise
-                </button>
-                <button
-                    class={btnEntretienClass}
-                    data-filter="entretien"
-                    onclick={handleFilterStatut}>
-                    En entretien
-                </button>
-                <button
-                    class={btnSansEntretienClass}
-                    data-filter="sansEntretien"
-                    onclick={handleFilterStatut}>
-                    Sans entretien
-                </button>
+            <div class="rec-filters-right">
+                <div class="sort-group">
+                    <span class="sort-label">Score :</span>
+                    <button class={sortDescClass} data-order="desc" onclick={handleSortToggle}
+                            title="Score décroissant (meilleurs en premier)">
+                        ↓ Meilleur
+                    </button>
+                    <button class={sortAscClass} data-order="asc" onclick={handleSortToggle}
+                            title="Score croissant (plus faibles en premier)">
+                        ↑ Plus faible
+                    </button>
+                </div>
             </div>
         </div>
 
-        <!-- Barre sélection -->
+        <!-- Barre de sélection -->
         <template if:true={hasSelected}>
-            <div class="selected-bar">
-                <div class="selected-info">
-                    <span class="selected-dot"></span>
-                    <span>{selectedCount} candidat(s) sélectionné(s)</span>
+            <div class="selection-bar">
+                <div class="selection-info">
+                    <span class="selection-dot"></span>
+                    <span>{selectedCount} sélectionné(s)</span>
                 </div>
-                <button
-                    class="btn-action-group"
-                    onclick={handleOpenActionModal}>
+                <button class="btn-action-group" onclick={handleOpenActionModal}>
                     ⚡ Action groupée
                 </button>
             </div>
         </template>
 
         <!-- Tableau -->
-        <div class="rec-table-wrapper">
-            <template if:true={hasCandidatures}>
+        <template if:true={hasCandidatures}>
+            <div class="rec-table-wrapper">
                 <table class="rec-table">
                     <thead>
                         <tr>
-                            <th style="width:44px">
-                                <input
-                                    type="checkbox"
-                                    class="checkbox-input"
-                                    checked={allSelected}
-                                    onchange={handleSelectAll}
-                                />
+                            <th class="th-check">
+                                <input type="checkbox"
+                                       checked={allSelected}
+                                       onchange={handleSelectAll} />
                             </th>
-                            <th>Candidat</th>
-                            <th>Offre</th>
-                            <th>Statut</th>
-                            <th>Décision</th>
-                            <th>Score</th>
-                            <th>Date candidature</th>
-                            <th>CV</th>
+                            <th class="th-candidat">Candidat</th>
+                            <template if:false={hasOffreContext}>
+                                <th class="th-offre">Offre</th>
+                            </template>
+                            <th class="th-center">Statut</th>
+                            <th class="th-center">Décision</th>
+                            <th class="th-center">Score</th>
+                            <th class="th-center">Date</th>
+                            <th class="th-center">CV</th>
                         </tr>
                     </thead>
                     <tbody>
                         <template for:each={candidatures} for:item="cand">
                             <tr key={cand.Id} class="table-row">
-                                <td>
-                                    <input
-                                        type="checkbox"
-                                        class="checkbox-input"
-                                        checked={cand.isSelected}
-                                        data-id={cand.Id}
-                                        onchange={handleSelectOne}
-                                    />
+
+                                <!-- Checkbox -->
+                                <td class="td-check">
+                                    <input type="checkbox"
+                                           data-id={cand.Id}
+                                           checked={cand.isSelected}
+                                           onchange={handleSelectOne} />
                                 </td>
+
                                 <!-- Candidat -->
-                                <td>
-                                    <div class="candidat-cell">
-                                        <div class="candidat-avatar">
-                                            {cand.initiales}
-                                        </div>
-                                        <button
-                                            class="candidat-name-link"
-                                            data-id={cand.Id}
-                                            onclick={handleCandidatClick}>
-                                            {cand.candidateName}
-                                        </button>
+                                <td class="td-candidat">
+                                    <div class="candidat-cell"
+                                         data-id={cand.Id}
+                                         onclick={handleCandidatClick}>
+                                        <div class="avatar">{cand.initiales}</div>
+                                        <span class="candidat-name">{cand.candidateName}</span>
                                     </div>
                                 </td>
-                                <!-- Offre -->
-                                <td>
-                                    <span class="offre-label">
-                                        {cand.offreTitre}
-                                    </span>
-                                </td>
+
+                                <!-- Offre (masquée si contexte offre) -->
+                                <template if:false={hasOffreContext}>
+                                    <td class="td-offre-name">{cand.offreTitre}</td>
+                                </template>
+
                                 <!-- Statut -->
-                                <td>
-                                    <span class={cand.statutClass}>
-                                        {cand.Statut__c}
-                                    </span>
+                                <td class="td-center">
+                                    <span class={cand.statutClass}>{cand.Statut__c}</span>
                                 </td>
-                                <!-- ✅ Décision -->
-                                <td>
+
+                                <!-- Décision -->
+                                <td class="td-center">
                                     <template if:true={cand.hasDecision}>
-                                        <span class={cand.decisionClass}>
-                                            {cand.Decision__c}
-                                        </span>
+                                        <span class={cand.decisionClass}>{cand.Decision__c}</span>
                                     </template>
                                     <template if:false={cand.hasDecision}>
-                                        <span class="text-muted">—</span>
+                                        <span class="badge-decision badge-en-cours">—</span>
                                     </template>
                                 </td>
+
                                 <!-- Score -->
-                                <td>
-                                    <div class="score-bar-wrap">
-                                        <div class="score-bar-bg">
-                                            <div
-                                                class={cand.scoreBarClass}
-                                                style={cand.scoreBarStyle}>
-                                            </div>
+                                <td class="td-center">
+                                    <div class="score-wrapper">
+                                        <div class="score-track">
+                                            <div class={cand.scoreBarClass}
+                                                 style={cand.scoreBarStyle}></div>
                                         </div>
-                                        <span class="score-label">
-                                            {cand.Score_Matching__c}%
-                                        </span>
+                                        <span class="score-value">{cand.Score_Matching__c}%</span>
                                     </div>
                                 </td>
+
                                 <!-- Date -->
-                                <td>
-                                    <span class="date-label">
-                                        {cand.dateFmt}
-                                    </span>
-                                </td>
+                                <td class="td-center td-date">{cand.dateFmt}</td>
+
                                 <!-- CV -->
-                                <td>
+                                <td class="td-center">
                                     <template if:true={cand.hasCv}>
-                                        <a
-                                            href={cand.CV_Public_URL__c}
-                                            target="_blank"
-                                            class="cv-link">
-                                            📄 CV
-                                        </a>
+                                        <a href={cand.CV_Public_URL__c}
+                                           target="_blank"
+                                           class="cv-link">📄 CV</a>
                                     </template>
                                     <template if:false={cand.hasCv}>
-                                        <span class="text-muted">—</span>
+                                        <span class="no-cv">—</span>
                                     </template>
                                 </td>
+
                             </tr>
                         </template>
                     </tbody>
                 </table>
-            </template>
+            </div>
+        </template>
 
-            <template if:false={hasCandidatures}>
-                <div class="empty-state">
-                    <div class="empty-icon">📭</div>
-                    <p>Aucune candidature trouvée.</p>
-                </div>
-            </template>
-        </div>
+        <!-- État vide -->
+        <template if:false={hasCandidatures}>
+            <div class="empty-state">
+                <div class="empty-icon">📭</div>
+                <p class="empty-text">Aucune candidature trouvée.</p>
+            </div>
+        </template>
 
         <!-- ══════════════════════════════════════════════ -->
-        <!-- Modale Action Groupée                          -->
+        <!-- Modale Action Groupée -->
         <!-- ══════════════════════════════════════════════ -->
         <template if:true={isActionModalOpen}>
             <div class="modal-backdrop" onclick={closeActionModal}></div>
-            <div class="modal-box modal-large">
+            <div class="modal-box" onclick={stopPropagation}>
                 <div class="modal-header">
-                    <div class="modal-header-content">
-                        <span class="modal-header-icon">⚡</span>
-                        <div>
-                            <h2 class="modal-title">Action groupée</h2>
-                            <p class="modal-subtitle">
-                                {selectedCount} candidat(s) sélectionné(s)
-                            </p>
-                        </div>
-                    </div>
-                    <button
-                        class="modal-close"
-                        onclick={closeActionModal}>✕
-                    </button>
+                    <h2 class="modal-title">⚡ Action groupée</h2>
+                    <button class="modal-close" onclick={closeActionModal}>✕</button>
                 </div>
                 <div class="modal-body">
-                    <table class="rec-table inner-table">
+                    <table class="modal-table">
                         <thead>
                             <tr>
                                 <th>Candidat</th>
-                                <th>Statut actuel</th>
                                 <th>Nouveau statut</th>
                                 <th>Décision</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <template
-                                for:each={selectedCandidatures}
-                                for:item="cand">
-                                <tr key={cand.Id} class="table-row">
+                            <template for:each={selectedCandidatures} for:item="sel">
+                                <tr key={sel.Id}>
+                                    <td class="modal-td-name">{sel.candidateName}</td>
                                     <td>
-                                        <div class="candidat-cell">
-                                            <div class="candidat-avatar">
-                                                {cand.initiales}
-                                            </div>
-                                            <span class="candidat-name-text">
-                                                {cand.candidateName}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class={cand.statutClass}>
-                                            {cand.Statut__c}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <select
-                                            class="select-styled"
-                                            data-id={cand.Id}
-                                            onchange={handleNewStatutChange}>
-                                            <option value="">
-                                                -- Choisir --
-                                            </option>
-                                            <template
-                                                for:each={statutOptions}
-                                                for:item="opt">
-                                                <option
-                                                    key={opt.value}
-                                                    value={opt.value}>
+                                        <select class="modal-select"
+                                                data-id={sel.Id}
+                                                onchange={handleNewStatutChange}>
+                                            <option value="">— Inchangé —</option>
+                                            <template for:each={statutOptions} for:item="opt">
+                                                <option key={opt.value} value={opt.value}>
                                                     {opt.label}
                                                 </option>
                                             </template>
                                         </select>
                                     </td>
                                     <td>
-                                        <select
-                                            class="select-styled"
-                                            data-id={cand.Id}
-                                            onchange={handleDecisionChange}>
-                                            <option value="">
-                                                -- Choisir --
-                                            </option>
-                                            <template
-                                                for:each={decisionOptions}
-                                                for:item="opt">
-                                                <option
-                                                    key={opt.value}
-                                                    value={opt.value}>
+                                        <select class="modal-select"
+                                                data-id={sel.Id}
+                                                onchange={handleDecisionChange}>
+                                            <option value="">— Inchangé —</option>
+                                            <template for:each={decisionOptions} for:item="opt">
+                                                <option key={opt.value} value={opt.value}>
                                                     {opt.label}
                                                 </option>
                                             </template>
@@ -285,16 +229,8 @@
                     </table>
                 </div>
                 <div class="modal-footer">
-                    <button
-                        class="btn-cancel"
-                        onclick={closeActionModal}>
-                        Annuler
-                    </button>
-                    <button
-                        class="btn-save"
-                        onclick={handleSaveActions}>
-                        ✅ Enregistrer
-                    </button>
+                    <button class="btn-cancel" onclick={closeActionModal}>Annuler</button>
+                    <button class="btn-save" onclick={handleSaveActions}>✅ Enregistrer</button>
                 </div>
             </div>
         </template>

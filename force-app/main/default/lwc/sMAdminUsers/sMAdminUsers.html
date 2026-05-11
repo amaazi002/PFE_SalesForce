@@ -1,172 +1,129 @@
 <template>
-    <!-- ✅ Click sur le wrapper pour fermer les dropdowns -->
-    <div class="slds-card" onclick={handleOutsideClick}>
+    <div class="rec-container" onclick={handleOutsideClick}>
 
-        <!-- Header -->
-        <div class="slds-card__header slds-grid slds-p-around_small">
-            <header class="slds-media slds-media_center slds-has-flexi-truncate">
-                <div class="slds-media__body">
-                    <h2 class="slds-card__header-title slds-truncate">
-                        <lightning-icon
-                            icon-name="standard:user"
-                            size="small"
-                            class="slds-m-right_small">
-                        </lightning-icon>
-                        Gestion des Utilisateurs
-                    </h2>
+        <!-- ══════════════════════ Header ══════════════════════ -->
+        <div class="rec-header">
+            <div class="rec-header-left">
+                <div class="rec-header-icon">👥</div>
+                <div>
+                    <h1 class="rec-title">Gestion des Utilisateurs</h1>
+                    <p class="rec-subtitle">{totalUsers} utilisateur(s)</p>
                 </div>
-                <div class="slds-no-flex">
-                    <lightning-input
+            </div>
+            <div class="rec-header-right">
+                <div class="search-wrapper">
+                    <span class="search-icon">🔍</span>
+                    <input
                         type="search"
+                        class="search-input"
                         placeholder="Rechercher un utilisateur..."
                         value={searchTerm}
                         onchange={handleSearch}
-                        class="search-input">
-                    </lightning-input>
+                    />
                 </div>
-            </header>
+            </div>
         </div>
 
-        <!-- Body -->
-        <div class="slds-p-horizontal_small slds-p-bottom_small">
-            <template if:true={hasUsers}>
-                <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_fixed-layout">
-                    <thead>
-                        <tr class="slds-line-height_reset">
-                            <th scope="col" style="width:50px"></th>
-                            <th scope="col"><div class="slds-truncate">Nom complet</div></th>
-                            <th scope="col"><div class="slds-truncate">Email</div></th>
-                            <th scope="col"><div class="slds-truncate">Rôle</div></th>
-                            <th scope="col"><div class="slds-truncate">Statut</div></th>
-                            <th scope="col"><div class="slds-truncate">Date création</div></th>
-                            <th scope="col" style="width:80px">
-                                <div class="slds-truncate">Actions</div>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
+        <!-- ══════════════════════ Tableau ══════════════════════ -->
+        <div class="rec-table-wrapper">
+            <table class="rec-table">
+                <thead>
+                    <tr>
+                        <th class="th-avatar"></th>
+                        <th class="th-offre">Nom complet</th>
+                        <th class="th-center">Email</th>
+                        <th class="th-center">Rôle</th>
+                        <th class="th-center">Statut</th>
+                        <th class="th-center">Date création</th>
+                        <th class="th-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template if:true={hasUsers}>
                         <template for:each={filteredUsers} for:item="user">
                             <tr key={user.Id} class={user.rowClass}>
 
                                 <!-- Avatar -->
-                                <td>
+                                <td class="td-avatar">
                                     <div class="user-avatar">{user.initials}</div>
                                 </td>
 
-                                <!-- ✅ FirstName -->
-                                <td>
-                                    <div class="slds-truncate" title={user.lastName}>
-                                        {user.fullName}
-                                    </div>
+                                <!-- Nom -->
+                                <td class="td-offre">
+                                    <div class="user-name">{user.fullName}</div>
+                                    <div class="user-sub">{user.lastName}</div>
                                 </td>
 
                                 <!-- Email -->
-                                <td>
-                                    <div class="slds-truncate" title={user.email}>
-                                        {user.email}
-                                    </div>
+                                <td class="td-center">
+                                    <span class="meta-chip">{user.email}</span>
                                 </td>
 
                                 <!-- Rôle -->
-                                <td>
-                                    <div class="slds-truncate">{user.roleLabel}</div>
+                                <td class="td-center">
+                                    <span class="role-chip">{user.roleLabel}</span>
                                 </td>
 
                                 <!-- Statut -->
-                                <td>
+                                <td class="td-center">
                                     <span class={user.badgeClass}>{user.statutLabel}</span>
                                 </td>
 
                                 <!-- Date -->
-                                <td>
-                                    <div class="slds-truncate">{user.createdDateFmt}</div>
+                                <td class="td-center">
+                                    <span class="date-chip">{user.createdDateFmt}</span>
                                 </td>
 
-                                <!-- ✅ Actions (3 points) -->
-                                <td class="action-cell">
-                                    <!-- Bouton 3 points -->
+                                <!-- Actions (3 points) -->
+                                <td class="td-center action-cell">
                                     <button
-                                        class="slds-button slds-button_icon slds-button_icon-border-filled action-btn"
+                                        class="btn-dots"
                                         title="Actions"
                                         data-id={user.Id}
                                         onclick={toggleDropdown}>
-                                        <lightning-icon
-                                            icon-name="utility:threedots_vertical"
-                                            size="x-small"
-                                            alternative-text="Actions">
-                                        </lightning-icon>
+                                        ⋮
                                     </button>
 
-                                    <!-- ✅ Dropdown -->
                                     <template if:true={user.isMenuOpen}>
                                         <div class="dropdown-menu">
                                             <ul class="dropdown-list" role="menu">
-                                                <!-- Bloquer -->
                                                 <li role="presentation">
                                                     <button
                                                         class="menu-item menu-item_warning"
                                                         data-id={user.Id}
                                                         data-action="block"
                                                         onclick={handleAction}>
-                                                        <lightning-icon
-                                                            icon-name="utility:block_visitor"
-                                                            size="x-small"
-                                                            class="slds-m-right_x-small">
-                                                        </lightning-icon>
-                                                        Bloquer
+                                                        🚫 Bloquer
                                                     </button>
                                                 </li>
-
-                                                <!-- Bannir -->
                                                 <li role="presentation">
                                                     <button
                                                         class="menu-item menu-item_danger"
                                                         data-id={user.Id}
                                                         data-action="ban"
                                                         onclick={handleAction}>
-                                                        <lightning-icon
-                                                            icon-name="utility:ban"
-                                                            size="x-small"
-                                                            class="slds-m-right_x-small">
-                                                        </lightning-icon>
-                                                        Bannir
+                                                        ⛔ Bannir
                                                     </button>
                                                 </li>
-
-                                                <!-- Désactiver -->
                                                 <li role="presentation">
                                                     <button
                                                         class="menu-item menu-item_warning"
                                                         data-id={user.Id}
                                                         data-action="deactivate"
                                                         onclick={handleAction}>
-                                                        <lightning-icon
-                                                            icon-name="utility:pause"
-                                                            size="x-small"
-                                                            class="slds-m-right_x-small">
-                                                        </lightning-icon>
-                                                        Désactiver
+                                                        ⏸ Désactiver
                                                     </button>
                                                 </li>
-
                                                 <li class="dropdown-divider"></li>
-
-                                                <!-- Supprimer -->
                                                 <li role="presentation">
                                                     <button
                                                         class="menu-item menu-item_danger"
                                                         data-id={user.Id}
                                                         data-action="delete"
                                                         onclick={handleAction}>
-                                                        <lightning-icon
-                                                            icon-name="utility:delete"
-                                                            size="x-small"
-                                                            class="slds-m-right_x-small">
-                                                        </lightning-icon>
-                                                        Supprimer
+                                                        🗑 Supprimer
                                                     </button>
                                                 </li>
-
                                             </ul>
                                         </div>
                                     </template>
@@ -174,64 +131,53 @@
 
                             </tr>
                         </template>
-                    </tbody>
-                </table>
-            </template>
+                    </template>
 
-            <!-- Aucun utilisateur -->
-            <template if:false={hasUsers}>
-                <div class="slds-p-around_medium slds-text-color_weak slds-text-align_center">
-                    <lightning-icon icon-name="utility:user" size="large"></lightning-icon>
-                    <p class="slds-m-top_small">Aucun utilisateur trouvé.</p>
-                </div>
-            </template>
+                    <template if:false={hasUsers}>
+                        <tr>
+                            <td colspan="7">
+                                <div class="empty-state">
+                                    <div class="empty-icon">👤</div>
+                                    <p>Aucun utilisateur trouvé.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
         </div>
 
-    </div><!-- ✅ Fin slds-card -->
+    </div>
 
-    <!-- Modale de confirmation -->
+    <!-- ══════════════════════ Modale Confirmation ══════════════════════ -->
     <template if:true={isConfirmModalOpen}>
-        <section role="dialog" tabindex="-1" aria-modal="true"
-                 class="slds-modal slds-fade-in-open">
-            <div class="slds-modal__container">
-                <header class={confirmHeaderClass}>
-                    <h2 class="slds-text-heading_medium">{confirmTitle}</h2>
-                    <button
-                        class="slds-button slds-button_icon slds-modal__close"
-                        onclick={closeConfirmModal}>
-                        <lightning-icon
-                            icon-name="utility:close"
-                            size="small"
-                            alternative-text="Fermer">
-                        </lightning-icon>
-                    </button>
-                </header>
-                <div class="slds-modal__content slds-p-around_medium slds-text-align_center">
-                    <lightning-icon
-                        icon-name={confirmIcon}
-                        size="large"
-                        class="slds-m-bottom_medium">
-                    </lightning-icon>
-                    <p class="slds-text-body_regular">{confirmMessage}</p>
-                    <p class="slds-text-body_small slds-text-color_weak slds-m-top_small">
-                        Utilisateur : <strong>{confirmUserName}</strong>
-                    </p>
+        <div onclick={closeConfirmModal} class="modal-backdrop"></div>
+        <div class="modal-box" onclick={stopPropagation}>
+            <div class="modal-header">
+                <div class="modal-header-content">
+                    <div class="modal-header-icon">⚠️</div>
+                    <div>
+                        <h2 class="modal-title">{confirmTitle}</h2>
+                        <p class="modal-subtitle">Action irréversible</p>
+                    </div>
                 </div>
-                <footer class="slds-modal__footer">
-                    <lightning-button
-                        label="Annuler"
-                        onclick={closeConfirmModal}>
-                    </lightning-button>
-                    <lightning-button
-                        class="slds-m-left_small"
-                        variant={confirmVariant}
-                        label="Confirmer"
-                        onclick={confirmAction}>
-                    </lightning-button>
-                </footer>
+                <button class="modal-close" onclick={closeConfirmModal}>✕</button>
             </div>
-        </section>
-        <div class="slds-backdrop slds-backdrop_open"></div>
+            <div class="modal-body modal-body-center">
+                <p class="confirm-message">{confirmMessage}</p>
+                <p class="confirm-user">
+                    Utilisateur : <strong>{confirmUserName}</strong>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-footer-cancel" type="button" onclick={closeConfirmModal}>
+                    ✕ Annuler
+                </button>
+                <button class={confirmBtnClass} type="button" onclick={confirmAction}>
+                    ✔ Confirmer
+                </button>
+            </div>
+        </div>
     </template>
 
 </template>

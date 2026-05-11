@@ -109,6 +109,16 @@ export default class SMAdminUsers extends LightningElement {
         return Array.isArray(this.filteredUsers) && this.filteredUsers.length > 0;
     }
 
+    get totalUsers() {
+        return this.filteredUsers ? this.filteredUsers.length : 0;
+    }
+
+    get confirmBtnClass() {
+        return this.confirmVariant === 'destructive'
+            ? 'btn-footer-confirm-danger'
+            : 'btn-footer-confirm';
+    }
+
     handleSearch(event) {
         this.searchTerm = event.target.value;
     }
@@ -200,6 +210,10 @@ export default class SMAdminUsers extends LightningElement {
         this.pendingAction      = null;
         this.pendingUserId      = null;
         this.confirmUserName    = '';
+    }
+
+    stopPropagation(event) {
+        event.stopPropagation();
     }
 
     async confirmAction() {

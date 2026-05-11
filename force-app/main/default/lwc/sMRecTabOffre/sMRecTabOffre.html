@@ -4,10 +4,10 @@
         <!-- Header -->
         <div class="rec-header">
             <div class="rec-header-left">
-                <div class="rec-header-icon">📋</div>
+                <div class="rec-header-icon"></div>
                 <div>
                     <h1 class="rec-title">Offres d'emploi</h1>
-                    <p class="rec-subtitle">{totalOffres} offre(s) active(s)</p>
+                    <p class="rec-subtitle">{totalOffres} offre(s)</p>
                 </div>
             </div>
         </div>
@@ -19,28 +19,19 @@
                     <tr>
                         <th class="th-offre">Offre</th>
                         <th class="th-center">
-                            <div class="th-inner">
-                                <span class="th-icon">🆕</span>
-                                New Submissions
-                            </div>
+                            <div class="th-inner">New</div>
                         </th>
                         <th class="th-center">
-                            <div class="th-inner">
-                                <span class="th-icon">⏳</span>
-                                En attente
-                            </div>
+                            <div class="th-inner">Soumise</div>
                         </th>
                         <th class="th-center">
-                            <div class="th-inner">
-                                <span class="th-icon">📅</span>
-                                Entretien planifié
-                            </div>
+                            <div class="th-inner">En attente</div>
                         </th>
                         <th class="th-center">
-                            <div class="th-inner">
-                                <span class="th-icon">👥</span>
-                                Total
-                            </div>
+                            <div class="th-inner">Entretien</div>
+                        </th>
+                        <th class="th-center">
+                            <div class="th-inner">Total</div>
                         </th>
                         <th class="th-center">Actions</th>
                     </tr>
@@ -49,22 +40,19 @@
                     <template if:true={hasRows}>
                         <template for:each={rows} for:item="row">
                             <tr key={row.offreId} class="table-row">
+
                                 <!-- Offre -->
                                 <td class="td-offre">
                                     <div class="offre-titre">
                                         {row.offre.Titre__c}
                                     </div>
                                     <div class="offre-meta">
-                                        <span class="meta-item">
-                                            <span class="meta-icon">📍</span>
+                                        <span class="meta-chip">
                                             {row.offre.Localisation__c}
                                         </span>
-                                        <span class="meta-sep">·</span>
-                                        <span class="meta-item">
-                                            <span class="meta-icon">📆</span>
+                                        <span class="meta-chip">
                                             {row.deadlineFmt}
                                         </span>
-                                        <span class="meta-sep">·</span>
                                         <span class={row.statutClass}>
                                             {row.offre.Statut__c}
                                         </span>
@@ -73,28 +61,29 @@
 
                                 <!-- New Submissions -->
                                 <td class="td-center">
-                                    <div class="stat-cell">
-                                        <span class="stat-number stat-new">
-                                            {row.newSubmissions}
-                                        </span>
+                                    <div class="stat-pill stat-new">
+                                        {row.newSubmissions}
+                                    </div>
+                                </td>
+
+                                <!-- Soumise -->
+                                <td class="td-center">
+                                    <div class="stat-pill stat-soumise">
+                                        {row.soumiseCandidats}
                                     </div>
                                 </td>
 
                                 <!-- En attente -->
                                 <td class="td-center">
-                                    <div class="stat-cell">
-                                        <span class="stat-number stat-wait">
-                                            {row.enAttenteEntretien}
-                                        </span>
+                                    <div class="stat-pill stat-wait">
+                                        {row.enAttenteEntretien}
                                     </div>
                                 </td>
 
                                 <!-- Entretien planifié -->
                                 <td class="td-center">
-                                    <div class="stat-cell">
-                                        <span class="stat-number stat-planned">
-                                            {row.entretienPlanifie}
-                                        </span>
+                                    <div class="stat-pill stat-planned">
+                                        {row.entretienPlanifie}
                                     </div>
                                 </td>
 
@@ -108,9 +97,7 @@
                                         <span class="total-number">
                                             {row.totalCandidats}
                                         </span>
-                                        <span class="total-label">
-                                            voir tout →
-                                        </span>
+                                        <span class="total-sub">voir →</span>
                                     </button>
                                 </td>
 
@@ -119,16 +106,19 @@
                                     <button
                                         class="btn-edit"
                                         data-id={row.offreId}
+                                        data-titre={row.offre.Titre__c}
                                         onclick={handleEdit}>
-                                        ✏️ Modifier
+                                        Modifier
                                     </button>
                                 </td>
+
                             </tr>
                         </template>
                     </template>
+
                     <template if:false={hasRows}>
                         <tr>
-                            <td colspan="6">
+                            <td colspan="7">
                                 <div class="empty-state">
                                     <div class="empty-icon">📭</div>
                                     <p>Aucune offre trouvée.</p>
@@ -141,339 +131,77 @@
         </div>
 
         <!-- ══════════════════════════════════════════════ -->
-        <!-- Modale Candidatures                            -->
-        <!-- ══════════════════════════════════════════════ -->
-        <template if:true={isModalOpen}>
-            <div class="modal-backdrop" onclick={closeModal}></div>
-            <div class="modal-box modal-large">
-                <div class="modal-header">
-                    <div class="modal-header-content">
-                        <span class="modal-header-icon">👥</span>
-                        <div>
-                            <h2 class="modal-title">Candidatures</h2>
-                            <p class="modal-subtitle">{modalOfferTitle}</p>
-                        </div>
-                    </div>
-                    <button class="modal-close" onclick={closeModal}>✕</button>
-                </div>
-                <div class="modal-body">
-
-                    <!-- Filtres -->
-                    <div class="modal-filters">
-                        <div class="search-wrapper">
-                            <span class="search-icon">🔍</span>
-                            <input
-                                type="text"
-                                class="search-input"
-                                placeholder="Rechercher par nom..."
-                                value={searchTerm}
-                                oninput={handleSearch}
-                            />
-                        </div>
-                        <div class="filter-buttons">
-                            <button
-                                class={btnEntretienClass}
-                                onclick={handleFilterEntretien}>
-                                📅 Entretien planifié
-                            </button>
-                            <button
-                                class={btnSansEntretienClass}
-                                onclick={handleFilterSansEntretien}>
-                                ⏳ Sans entretien
-                            </button>
-                            <button
-                                class={btnNouveauxClass}
-                                onclick={handleFilterNouveaux}>
-                                🆕 Nouveaux
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Barre sélection -->
-                    <template if:true={hasSelected}>
-                        <div class="selected-bar">
-                            <div class="selected-info">
-                                <span class="selected-dot"></span>
-                                <span>
-                                    {selectedCount} candidat(s) sélectionné(s)
-                                </span>
-                            </div>
-                            <button
-                                class="btn-action-group"
-                                onclick={handleOpenActionModal}>
-                                ⚡ Action groupée
-                            </button>
-                        </div>
-                    </template>
-
-                    <!-- Tableau candidatures -->
-                    <template if:true={hasCandidatures}>
-                        <table class="rec-table inner-table">
-                            <thead>
-                                <tr>
-                                    <th style="width:44px">
-                                        <input
-                                            type="checkbox"
-                                            class="checkbox-input"
-                                            checked={allSelected}
-                                            onchange={handleSelectAll}
-                                        />
-                                    </th>
-                                    <th>Candidat</th>
-                                    <th>Statut</th>
-                                    <th>Score matching</th>
-                                    <th>CV</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <template
-                                    for:each={filteredCandidatures}
-                                    for:item="cand">
-                                    <tr key={cand.Id} class="table-row">
-                                        <td>
-                                            <input
-                                                type="checkbox"
-                                                class="checkbox-input"
-                                                checked={cand.isSelected}
-                                                data-id={cand.Id}
-                                                onchange={handleSelectOne}
-                                            />
-                                        </td>
-                                        <td>
-                                            <div class="candidat-cell">
-                                                <div class="candidat-avatar">
-                                                    {cand.initiales}
-                                                </div>
-                                                <button
-                                                    class="candidat-name-link"
-                                                    data-id={cand.Id}
-                                                    onclick={handleCandidatClick}>
-                                                    {cand.candidateName}
-                                                </button>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class={cand.statutClass}>
-                                                {cand.Statut__c}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <div class="score-bar-wrap">
-                                                <div class="score-bar-bg">
-                                                    <div
-                                                        class={cand.scoreBarClass}
-                                                        style={cand.scoreBarStyle}>
-                                                    </div>
-                                                </div>
-                                                <span class="score-label">
-                                                    {cand.Score_Matching__c}%
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <template if:true={cand.hasCv}>
-                                                <a
-                                                    href={cand.CV_Public_URL__c}
-                                                    target="_blank"
-                                                    class="cv-link">
-                                                    📄 CV
-                                                </a>
-                                            </template>
-                                            <template if:false={cand.hasCv}>
-                                                <span class="text-muted">—</span>
-                                            </template>
-                                        </td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
-                    </template>
-
-                    <template if:false={hasCandidatures}>
-                        <div class="empty-state">
-                            <div class="empty-icon">📭</div>
-                            <p>Aucune candidature.</p>
-                        </div>
-                    </template>
-                </div>
-            </div>
-        </template>
-
-        <!-- ══════════════════════════════════════════════ -->
-        <!-- Modale Action Groupée                          -->
-        <!-- ══════════════════════════════════════════════ -->
-        <template if:true={isActionModalOpen}>
-            <div class="modal-backdrop" onclick={closeActionModal}></div>
-            <div class="modal-box modal-large">
-                <div class="modal-header">
-                    <div class="modal-header-content">
-                        <span class="modal-header-icon">⚡</span>
-                        <div>
-                            <h2 class="modal-title">Action groupée</h2>
-                            <p class="modal-subtitle">
-                                {selectedCount} candidat(s) sélectionné(s)
-                            </p>
-                        </div>
-                    </div>
-                    <button
-                        class="modal-close"
-                        onclick={closeActionModal}>✕
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <table class="rec-table inner-table">
-                        <thead>
-                            <tr>
-                                <th>Candidat</th>
-                                <th>Statut actuel</th>
-                                <th>Nouveau statut</th>
-                                <th>Décision</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <template
-                                for:each={selectedCandidatures}
-                                for:item="cand">
-                                <tr key={cand.Id} class="table-row">
-                                    <td>
-                                        <div class="candidat-cell">
-                                            <div class="candidat-avatar">
-                                                {cand.initiales}
-                                            </div>
-                                            <span class="candidat-name-text">
-                                                {cand.candidateName}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class={cand.statutClass}>
-                                            {cand.Statut__c}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <select
-                                            class="select-styled"
-                                            data-id={cand.Id}
-                                            onchange={handleNewStatutChange}>
-                                            <option value="">
-                                                -- Choisir --
-                                            </option>
-                                            <template
-                                                for:each={statutOptions}
-                                                for:item="opt">
-                                                <option
-                                                    key={opt.value}
-                                                    value={opt.value}>
-                                                    {opt.label}
-                                                </option>
-                                            </template>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <select
-                                            class="select-styled"
-                                            data-id={cand.Id}
-                                            onchange={handleDecisionChange}>
-                                            <option value="">
-                                                -- Choisir --
-                                            </option>
-                                            <template
-                                                for:each={decisionOptions}
-                                                for:item="opt">
-                                                <option
-                                                    key={opt.value}
-                                                    value={opt.value}>
-                                                    {opt.label}
-                                                </option>
-                                            </template>
-                                        </select>
-                                    </td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="modal-footer">
-                    <button
-                        class="btn-cancel"
-                        onclick={closeActionModal}>
-                        Annuler
-                    </button>
-                    <button
-                        class="btn-save"
-                        onclick={handleSaveActions}>
-                        ✅ Enregistrer
-                    </button>
-                </div>
-            </div>
-        </template>
-
-        <!-- ══════════════════════════════════════════════ -->
-        <!-- Modale Edition Offre                           -->
+        <!-- Modale Modifier Offre -->
         <!-- ══════════════════════════════════════════════ -->
         <template if:true={isEditModalOpen}>
-            <div class="modal-backdrop" onclick={closeEditModal}></div>
-            <div class="modal-box modal-edit">
+            <div onclick={closeEditModal} class="modal-backdrop"></div>
+            <div class="modal-box modal-edit" onclick={stopPropagation}>
                 <div class="modal-header">
                     <div class="modal-header-content">
-                        <span class="modal-header-icon">✏️</span>
+                        <div class="modal-header-icon"></div>
                         <div>
                             <h2 class="modal-title">Modifier l'offre</h2>
                             <p class="modal-subtitle">{editOfferTitle}</p>
                         </div>
                     </div>
-                    <button
-                        class="modal-close"
-                        onclick={closeEditModal}>✕
-                    </button>
+                    <button class="modal-close" onclick={closeEditModal}>✕</button>
                 </div>
+
                 <div class="modal-body">
                     <lightning-record-edit-form
                         object-api-name="Offre__c"
                         record-id={editRecordId}
-                        onsubmit={handleEditSubmit}
                         onsuccess={handleEditSuccess}
                         onerror={handleEditError}>
 
                         <lightning-messages></lightning-messages>
 
-                        <div class="form-grid">
-                            <lightning-input-field
-                                field-name="Titre__c" required>
-                            </lightning-input-field>
-                            <lightning-input-field
-                                field-name="Departement__c" required>
-                            </lightning-input-field>
-                            <lightning-input-field
-                                field-name="Localisation__c" required>
-                            </lightning-input-field>
-                            <lightning-input-field
-                                field-name="Deadline__c" required>
-                            </lightning-input-field>
-                            <lightning-input-field
-                                field-name="Statut__c" required>
-                            </lightning-input-field>
-                            <lightning-input-field
-                                field-name="TypeOffre__c" required>
-                            </lightning-input-field>
-                            <lightning-input-field
-                                field-name="Description__c">
-                            </lightning-input-field>
-                            <lightning-input-field
-                                field-name="CompetencesRequises__c">
-                            </lightning-input-field>
+                        <div class="form-section">
+                            <p class="form-section-title"></p>
+                            <div class="form-grid">
+                                <lightning-input-field field-name="Titre__c" required>
+                                </lightning-input-field>
+                                <lightning-input-field field-name="Departement__c" required>
+                                </lightning-input-field>
+                                <lightning-input-field field-name="Localisation__c" required>
+                                </lightning-input-field>
+                                <lightning-input-field field-name="Deadline__c" required>
+                                </lightning-input-field>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <p class="form-section-title"></p>
+                            <div class="form-grid">
+                                <lightning-input-field field-name="Statut__c" required>
+                                </lightning-input-field>
+                                <lightning-input-field field-name="TypeOffre__c" required>
+                                </lightning-input-field>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <p class="form-section-title"></p>
+                            <div class="form-grid-full">
+                                <lightning-input-field field-name="Description__c">
+                                </lightning-input-field>
+                                <lightning-input-field field-name="CompetencesRequises__c">
+                                </lightning-input-field>
+                            </div>
                         </div>
 
                         <div class="modal-footer">
                             <button
-                                class="btn-cancel"
+                                class="btn-footer-cancel"
+                                type="button"
                                 onclick={closeEditModal}>
-                                Annuler
+                                ✕ Annuler
                             </button>
                             <lightning-button
                                 variant="brand"
-                                label="✅ Enregistrer"
-                                type="submit">
+                                label="Enregistrer"
+                                type="submit"
+                                class="btn-lwc-save">
                             </lightning-button>
                         </div>
                     </lightning-record-edit-form>

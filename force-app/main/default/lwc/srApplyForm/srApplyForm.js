@@ -24,6 +24,8 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
     @track parsingCv          = false;
     @track cvParsed           = false;
     @track cvParseError       = false;
+    @track isJunior           = false;
+    @track juniorAdvice       = '';
 
     // Étape 1 - Identité
     @track firstName          = '';
@@ -35,14 +37,19 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
     @track situationFamiliale = '';
 
     // Étape 2 - Profil pro
-    @track tech               = '';
-    @track xp                 = '';
-    @track soft               = '';
+    @track hardSkills         = [];   // { id, label }
+    @track softSkills         = [];   // { id, label }
+    @track experiences        = [];   // { id, poste, dateDebut, dateFin, description }
+    @track newHardSkill       = '';
+    @track newSoftSkill       = '';
     @track anneesExperience   = '';
     @track dernierDiplome     = '';
     @track niveauEtude        = '';
     @track ecoleUniversite    = '';
     @track anneeObtention     = '';
+
+    get hasHardSkills() { return this.hardSkills.length > 0; }
+    get hasSoftSkills() { return this.softSkills.length > 0; }
 
     // État
     @track isSubmitting       = false;
@@ -145,14 +152,60 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
     // ══════════════════════════════════════
     // HANDLERS - ÉTAPE 2
     // ══════════════════════════════════════
-    onTech             = (e) => { this.tech             = e.detail.value; }
-    onXp               = (e) => { this.xp               = e.detail.value; }
-    onSoft             = (e) => { this.soft             = e.detail.value; }
     onAnneesExperience = (e) => { this.anneesExperience = e.detail.value; }
     onDernierDiplome   = (e) => { this.dernierDiplome   = e.detail.value; }
     onNiveauEtude      = (e) => { this.niveauEtude      = e.detail.value; }
     onEcoleUniversite  = (e) => { this.ecoleUniversite  = e.detail.value; }
     onAnneeObtention   = (e) => { this.anneeObtention   = e.detail.value; }
+
+    // Hard Skills
+    onNewHardSkillInput  = (e) => { this.newHardSkill = e.target.value; }
+    onHardSkillKeydown   = (e) => { if (e.key === 'Enter') { e.preventDefault(); this.addHardSkill(); } }
+    addHardSkill = () => {
+        const label = (this.newHardSkill || '').trim();
+        if (!label) return;
+        if (this.hardSkills.find(s => s.label.toLowerCase() === label.toLowerCase())) return;
+        this.hardSkills  = [...this.hardSkills, { id: Date.now() + Math.random(), label }];
+        this.newHardSkill = '';
+    }
+    removeHardSkill = (e) => {
+        const id = Number(e.currentTarget.dataset.id);
+        this.hardSkills = this.hardSkills.filter(s => s.id !== id);
+    }
+
+    // Soft Skills
+    onNewSoftSkillInput  = (e) => { this.newSoftSkill = e.target.value; }
+    onSoftSkillKeydown   = (e) => { if (e.key === 'Enter') { e.preventDefault(); this.addSoftSkill(); } }
+    addSoftSkill = () => {
+        const label = (this.newSoftSkill || '').trim();
+        if (!label) return;
+        if (this.softSkills.find(s => s.label.toLowerCase() === label.toLowerCase())) return;
+        this.softSkills  = [...this.softSkills, { id: Date.now() + Math.random(), label }];
+        this.newSoftSkill = '';
+    }
+    removeSoftSkill = (e) => {
+        const id = Number(e.currentTarget.dataset.id);
+        this.softSkills = this.softSkills.filter(s => s.id !== id);
+    }
+
+    // Expériences
+    addExperience = () => {
+        this.experiences = [...this.experiences, {
+            id: Date.now() + Math.random(), poste: '', dateDebut: '', dateFin: '', description: ''
+        }];
+    }
+    removeExperience = (e) => {
+        const id = Number(e.currentTarget.dataset.id);
+        this.experiences = this.experiences.filter(exp => exp.id !== id);
+    }
+    onExpChange = (e) => {
+        const id    = Number(e.currentTarget.dataset.id);
+        const field = e.currentTarget.dataset.field;
+        const value = e.target.value;
+        this.experiences = this.experiences.map(exp =>
+            exp.id === id ? { ...exp, [field]: value } : exp
+        );
+    }
 
     // ══════════════════════════════════════
     // GESTION FICHIER CV
@@ -199,8 +252,15 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
     goStep2 = async () => {
         this.lastError = '';
 
-        if (!this.firstName?.trim() || !this.lastName?.trim() || !this.email?.trim()) {
-            this.lastError = 'Prénom, Nom et Email sont obligatoires.';
+        // ✅ Validation LWC standard de tous les champs (Prénom, Nom, Sexe, etc.)
+        const allValid = [...this.template.querySelectorAll('lightning-input, lightning-combobox')]
+            .reduce((validSoFar, inputCmp) => {
+                inputCmp.reportValidity();
+                return validSoFar && inputCmp.checkValidity();
+            }, true);
+
+        if (!allValid) {
+            this.lastError = 'Veuillez remplir correctement tous les champs obligatoires.';
             this.toast('Champs requis', this.lastError, 'warning');
             return;
         }
@@ -210,6 +270,23 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
             this.lastError = 'Adresse email invalide.';
             this.toast('Email invalide', this.lastError, 'warning');
             return;
+        }
+
+        // ✅ Validation de l'âge (minimum 20 ans)
+        if (this.dateNaissance) {
+            const birthDate = new Date(this.dateNaissance);
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            
+            if (age < 20) {
+                this.lastError = 'Vous devez avoir au moins 20 ans pour postuler.';
+                this.toast('Âge minimum requis', this.lastError, 'error');
+                return;
+            }
         }
 
         if (!this._pendingFile) {
@@ -281,14 +358,46 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
                     if (data.anneesExperience != null && Number(data.anneesExperience) > 0) {
                         this.anneesExperience = String(data.anneesExperience);
                     }
-                    if (data.competencesTech  && data.competencesTech.trim()) {
-                        this.tech             = data.competencesTech;
-                    }
-                    if (data.experienceProf   && data.experienceProf.trim()) {
-                        this.xp               = data.experienceProf;
+                    if (data.competencesTech && data.competencesTech.trim()) {
+                        this.hardSkills = data.competencesTech
+                            .split(/[,;\n]+/).map(s => s.trim()).filter(Boolean)
+                            .map(label => ({ id: Date.now() + Math.random(), label }));
                     }
                     if (data.competencesPerso && data.competencesPerso.trim()) {
-                        this.soft             = data.competencesPerso;
+                        this.softSkills = data.competencesPerso
+                            .split(/[,;\n]+/).map(s => s.trim()).filter(Boolean)
+                            .map(label => ({ id: Date.now() + Math.random(), label }));
+                    }
+                    if (data.experienceProf && data.experienceProf.trim()) {
+                        // On découpe par ligne
+                        const lines = data.experienceProf.split('\n').filter(line => line.trim());
+                        this.experiences = lines.map(line => {
+                            const parts = line.split('|').map(p => p.trim());
+                            let poste = parts[0] || '';
+                            let dateDebut = '';
+                            let dateFin = '';
+                            let description = parts.slice(1).join(' - ');
+
+                            // Tentative simple d'extraction de dates (ex: 2020 - 2024)
+                            const dateMatch = line.match(/\b(20\d{2})\b.*\b(20\d{2}|présent|actuel)\b/i);
+                            if (dateMatch) {
+                                dateDebut = dateMatch[1];
+                                dateFin = dateMatch[2].toLowerCase().includes('20') ? dateMatch[2] : '';
+                            }
+
+                            return {
+                                id: Date.now() + Math.random(),
+                                poste: poste,
+                                dateDebut: dateDebut,
+                                dateFin: dateFin,
+                                description: description
+                            };
+                        });
+                    }
+                    if (data.competencesPerso && data.competencesPerso.trim()) {
+                        this.softSkills = data.competencesPerso
+                            .split(/[,;\n]+/).map(s => s.trim()).filter(Boolean)
+                            .map(label => ({ id: Date.now() + Math.random(), label }));
                     }
                     if (data.dernierDiplome   && data.dernierDiplome.trim()) {
                         this.dernierDiplome   = data.dernierDiplome;
@@ -300,12 +409,21 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
                         this.anneeObtention   = String(data.anneeObtention);
                     }
 
+                    if (data.conseil) {
+                        this.juniorAdvice = data.conseil;
+                        this.isJunior     = !!data.is_junior;
+                    }
+
                     if (data.errorMessage) {
                         this.cvParseError = true;
                         this.toast('Attention', data.errorMessage, 'warning');
                     } else {
                         this.cvParsed = true;
-                        this.toast('CV analysé !', 'Champs remplis automatiquement.', 'success');
+                        if (this.isJunior) {
+                            this.toast('Profil Junior', 'Votre potentiel est mis en avant !', 'success');
+                        } else {
+                            this.toast('CV analysé !', 'Champs remplis automatiquement.', 'success');
+                        }
                     }
 
                 } catch(e) {
@@ -337,8 +455,18 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
         this.lastError    = '';
 
         try {
-            if (!this.tech?.trim() || !this.xp?.trim() || !this.soft?.trim()) {
-                throw new Error('Renseignez compétences techniques, expérience et compétences personnelles.');
+            // ✅ Validation LWC standard de tous les champs de l'étape 2
+            const allValid = [...this.template.querySelectorAll('lightning-input, lightning-textarea, lightning-combobox')]
+                .reduce((validSoFar, inputCmp) => {
+                    inputCmp.reportValidity();
+                    return validSoFar && inputCmp.checkValidity();
+                }, true);
+
+            if (!allValid) {
+                this.isSubmitting = false;
+                this.lastError = 'Veuillez remplir tous les champs obligatoires.';
+                this.toast('Champs requis', this.lastError, 'warning');
+                return;
             }
 
             if (!this.offerId || String(this.offerId).trim().length < 15) {
@@ -349,9 +477,9 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
             const candId = await createCandidature({
                 offreId           : String(this.offerId).trim(),
                 sexe              : this.sexe               || null,
-                techSkills        : this.tech               || null,
-                experience        : this.xp                 || null,
-                softSkills        : this.soft               || null,
+                techSkills        : this.hardSkills.map(s => s.label).join(', ') || null,
+                experience        : JSON.stringify(this.experiences) || null,
+                softSkills        : this.softSkills.map(s => s.label).join(', ') || null,
                 firstName         : this.firstName          || null,
                 lastName          : this.lastName           || null,
                 email             : this.email              || null,
@@ -364,7 +492,8 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
                 niveauEtude       : this.niveauEtude        || null,
                 ecoleUniversite   : this.ecoleUniversite    || null,
                 anneeObtention    : this.anneeObtention
-                    ? parseInt(this.anneeObtention, 10) : null
+                    ? parseInt(this.anneeObtention, 10) : null,
+                isJunior          : this.isJunior || false
             });
 
             if (!candId) throw new Error('La création a échoué (Id vide).');
@@ -375,19 +504,27 @@ export default class SrApplyForm extends NavigationMixin(LightningElement) {
                 await this.uploadFileNow(this._pendingFile);
             }
 
-            // ✅ Matching CV / Offre
-            if (this._cvParsedData && this.offerId) {
+            // ✅ Matching CV / Offre avec les données À JOUR du formulaire
+            if (this.offerId) {
                 try {
-                    const cvJson = JSON.stringify(this._cvParsedData);
+                    const currentCvData = {
+                        anneesExperience : this.anneesExperience ? parseInt(this.anneesExperience, 10) : 0,
+                        competencesTech  : this.hardSkills.map(s => s.label).join(', '),
+                        experienceProf   : JSON.stringify(this.experiences),
+                        competencesPerso : this.softSkills.map(s => s.label).join(', '),
+                        dernierDiplome   : this.dernierDiplome,
+                        ecoleUniversite  : this.ecoleUniversite,
+                        anneeObtention   : this.anneeObtention ? parseInt(this.anneeObtention, 10) : null
+                    };
+
                     const score  = await matchCv({
-                        cvDataJson    : cvJson,
+                        cvDataJson    : JSON.stringify(currentCvData),
                         candidatureId : candId,
                         offreId       : String(this.offerId).trim()
                     });
                     this.scoreMatching = score;
                     console.log('✅ Score matching:', score);
                 } catch(matchErr) {
-                    // ✅ Ne pas bloquer la soumission si matching échoue
                     console.warn('Matching ignoré:', matchErr?.body?.message || matchErr?.message);
                 }
             }

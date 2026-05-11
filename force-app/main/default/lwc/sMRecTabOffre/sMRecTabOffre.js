@@ -25,7 +25,7 @@ export default class SmRecTabOffre extends NavigationMixin(LightningElement) {
     recordTypeId           = '';
 
     isModalOpen       = false;
-    isActionModalOpen = false;
+    isEditModalOpen   = false;
     isEditModalOpen   = false;
     modalOfferId      = '';
     modalOfferTitle   = '';
@@ -152,6 +152,11 @@ export default class SmRecTabOffre extends NavigationMixin(LightningElement) {
                this.filteredCandidatures.every(c => c.isSelected);
     }
 
+    get btnSoumiseClass() {
+        return this.activeFilter === 'Soumise'
+            ? 'filter-btn filter-btn-active' : 'filter-btn';
+    }
+
     get btnEntretienClass() {
         return this.activeFilter === 'entretien'
             ? 'filter-btn filter-btn-active' : 'filter-btn';
@@ -182,160 +187,11 @@ export default class SmRecTabOffre extends NavigationMixin(LightningElement) {
     }
 
     // ══════════════════════════════════════════════
-    // MODALE CANDIDATURES
-    // ══════════════════════════════════════════════
-    async openCandidatures(offreId, titre) {
-        this.modalOfferId    = offreId;
-        this.modalOfferTitle = titre;
-        this.searchTerm      = '';
-        this.activeFilter    = '';
-
-        try {
-            const data = await getCandidatures({ offreId });
-            this.candidatures = (data || []).map(c => this.mapCandidature(c));
-            this.isModalOpen  = true;
-        } catch (e) {
-            this.toast('Erreur', this.err(e), 'error');
-        }
-    }
-
-    closeModal() {
-        this.isModalOpen  = false;
-        this.candidatures = [];
-        this.searchTerm   = '';
-        this.activeFilter = '';
-    }
-
-    // ══════════════════════════════════════════════
-    // SEARCH & FILTRES
-    // ══════════════════════════════════════════════
-    handleSearch(event) {
-        this.searchTerm = event.target.value;
-    }
-
-    handleFilterEntretien() {
-        this.activeFilter =
-            this.activeFilter === 'entretien' ? '' : 'entretien';
-    }
-
-    handleFilterSansEntretien() {
-        this.activeFilter =
-            this.activeFilter === 'sansEntretien' ? '' : 'sansEntretien';
-    }
-
-    handleFilterNouveaux() {
-        this.activeFilter =
-            this.activeFilter === 'nouveaux' ? '' : 'nouveaux';
-    }
-
-    // ══════════════════════════════════════════════
-    // SELECTION
-    // ══════════════════════════════════════════════
-    handleSelectAll(event) {
-        const checked = event.target.checked;
-        this.candidatures = this.candidatures.map(c => ({
-            ...c, isSelected: checked
-        }));
-    }
-
-    handleSelectOne(event) {
-        const id      = event.target.dataset.id;
-        const checked = event.target.checked;
-        this.candidatures = this.candidatures.map(c =>
-            c.Id === id ? { ...c, isSelected: checked } : c
-        );
-    }
-
-    // ══════════════════════════════════════════════
-    // NAVIGATION PROFIL
-    // ══════════════════════════════════════════════
-    handleCandidatClick(event) {
-        const candidatureId = event.currentTarget.dataset.id;
-        this[NavigationMixin.Navigate]({
-            type: 'standard__webPage',
-            attributes: {
-                url: `/smartrec/recruteur/profile-candidat?id=${candidatureId}`
-            }
-        });
-    }
-
-    // ══════════════════════════════════════════════
-    // ACTION GROUPÉE
-    // ══════════════════════════════════════════════
-    handleOpenActionModal() {
-        if (!this.hasSelected) {
-            this.toast('Info', 'Sélectionnez au moins un candidat.', 'info');
-            return;
-        }
-        this.actionUpdates     = {};
-        this.isActionModalOpen = true;
-    }
-
-    closeActionModal() {
-        this.isActionModalOpen = false;
-        this.actionUpdates     = {};
-    }
-
-    handleNewStatutChange(event) {
-        const id    = event.target.dataset.id;
-        const value = event.target.value;
-        if (!this.actionUpdates[id]) this.actionUpdates[id] = {};
-        this.actionUpdates[id].newStatut = value;
-    }
-
-    handleDecisionChange(event) {
-        const id    = event.target.dataset.id;
-        const value = event.target.value;
-        if (!this.actionUpdates[id]) this.actionUpdates[id] = {};
-        this.actionUpdates[id].decision = value;
-    }
-
-    async handleSaveActions() {
-        const updates = this.selectedCandidatures
-            .map(c => ({
-                candidatureId : c.Id,
-                newStatut     : this.actionUpdates[c.Id]?.newStatut || '',
-                decision      : this.actionUpdates[c.Id]?.decision  || ''
-            }))
-            .filter(u => u.newStatut || u.decision);
-
-        if (!updates.length) {
-            this.toast('Info', 'Aucune modification à enregistrer.', 'info');
-            return;
-        }
-
-        try {
-            await updateCandidaturesGrouped({
-                updatesJson: JSON.stringify(updates)
-            });
-
-            this.candidatures = this.candidatures.map(c => {
-                const upd = this.actionUpdates[c.Id];
-                if (!upd) return { ...c, isSelected: false };
-                const newStatut   = upd.newStatut || c.Statut__c;
-                const newDecision = upd.decision  || c.Decision__c;
-                return {
-                    ...c,
-                    Statut__c:   newStatut,
-                    Decision__c: newDecision,
-                    statutClass: this.getStatutClass(newStatut),
-                    isSelected:  false
-                };
-            });
-
-            this.closeActionModal();
-            this.toast('Succès', 'Candidatures mises à jour.', 'success');
-            this.loadOffres();
-
-        } catch (e) {
-            this.toast('Erreur', this.err(e), 'error');
-        }
-    }
-
-    // ══════════════════════════════════════════════
     // EDITION OFFRE
     // ══════════════════════════════════════════════
+    EditModalOpen = () => {this.isEditModalOpen = true; };
     handleEdit(event) {
+        event.stopPropagation();
         const id  = event.currentTarget.dataset.id;
         const row = this.rows.find(r => r.offreId === id);
         this.editRecordId    = id;
@@ -347,30 +203,14 @@ export default class SmRecTabOffre extends NavigationMixin(LightningElement) {
         this.isEditModalOpen = false;
     }
 
-    handleEditSubmit(event) {
-        event.preventDefault();
-        const fields = event.detail.fields;
-        updateOffre({
-            offreId:            this.editRecordId,
-            titre:              fields.Titre__c,
-            departement:        fields.Departement__c,
-            localisation:       fields.Localisation__c,
-            deadline:           fields.Deadline__c,
-            statut:             fields.Statut__c,
-            typeOffre:          fields.TypeOffre__c,
-            description:        fields.Description__c,
-            competences:        fields.CompetencesRequises__c,
-            visibleAuxCandidat: fields.Visible_aux_candidat__c
-        }).then(() => {
-            this.handleEditSuccess();
-        }).catch(e => {
-            this.toast('Erreur', this.err(e), 'error');
-        });
+    stopPropagation(event) {
+        event.stopPropagation();
     }
 
+    // ✅ Supprimé handleEditSubmit — lightning-record-edit-form gère seul
     handleEditSuccess() {
         this.isEditModalOpen = false;
-        this.toast('Succès', 'Offre mise à jour.', 'success');
+        this.toast('Succès', 'Offre mise à jour avec succès.', 'success');
         this.loadOffres();
     }
 

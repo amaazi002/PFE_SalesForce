@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>VR_Deadline_Future</fullName>
+    <active>true</active>
+    <errorConditionFormula>AND(
+ NOT(ISBLANK( Deadline__c )),
+ Deadline__c &lt;= TODAY(),
+ NOT(ISPICKVAL(Statut__c, 'Clôturée'))
+)</errorConditionFormula>
+    <errorMessage>La date doit être strictement supérieure à aujourd’hui</errorMessage>
+</ValidationRule>
