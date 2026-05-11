@@ -28,6 +28,16 @@
                         value={searchTerm}
                         onchange={handleSearch} />
                 </div>
+                <div class="search-box">
+                    <input
+                        type="number"
+                        class="search-input score-filter-input"
+                        placeholder="🎯 Score min..."
+                        value={minScore}
+                        min="0"
+                        max="100"
+                        oninput={handleMinScoreChange} />
+                </div>
                 <div class="filter-group">
                     <button class={btnTousClass} data-filter="Tous" onclick={handleFilterStatut}>
                         Tous

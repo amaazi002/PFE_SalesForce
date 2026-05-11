@@ -14,6 +14,7 @@ export default class SmRecAllApps extends NavigationMixin(LightningElement) {
 
     @track candidatures      = [];
     @track searchTerm        = '';
+    @track minScore          = 0;
     @track activeFilter      = 'Tous';
     @track isActionModalOpen = false;
     @track actionUpdates     = {};
@@ -116,7 +117,12 @@ export default class SmRecAllApps extends NavigationMixin(LightningElement) {
                     String(c.Statut__c || '').toLowerCase() === 'soumise'
                 );
             }
-
+            
+            // Filtre par score minimum côté client
+            if (this.minScore > 0) {
+                list = list.filter(c => (c.Score_Matching__c || 0) >= this.minScore);
+            }
+            
             // Tri par score
             list = this.sortByScore(list);
 
@@ -226,6 +232,11 @@ export default class SmRecAllApps extends NavigationMixin(LightningElement) {
     // ══════════════════════════════════════════════
     handleSearch(event) {
         this.searchTerm = event.target.value;
+        this.loadCandidatures();
+    }
+
+    handleMinScoreChange(event) {
+        this.minScore = parseInt(event.target.value || 0, 10);
         this.loadCandidatures();
     }
 
