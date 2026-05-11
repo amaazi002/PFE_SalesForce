@@ -1,12 +1,14 @@
 import { LightningElement, api, track, wire } from 'lwc';
 import { NavigationMixin, CurrentPageReference } from 'lightning/navigation';
 import getOffer from '@salesforce/apex/SR_OfferController.getOfferById';
+import checkIfApplied from '@salesforce/apex/SR_OfferController.checkIfApplied';
 
 export default class SrOfferDetail extends NavigationMixin(LightningElement) {
 
     @api offerId;
     @track offer = {};
     isLoading    = true;
+    hasAlreadyApplied = false;
     _loaded      = false;
 
     @wire(CurrentPageReference)
@@ -39,7 +41,12 @@ export default class SrOfferDetail extends NavigationMixin(LightningElement) {
         try {
             const result = await getOffer({ offreId: this.offerId });
             this.offer   = result || {};
+            
+            // Vérifier si déjà postulé
+            this.hasAlreadyApplied = await checkIfApplied({ offreId: this.offerId });
+            
             console.log('Offre chargée :', JSON.stringify(this.offer));
+            console.log('Déjà postulé ?', this.hasAlreadyApplied);
         } catch (e) {
             console.error('Erreur chargement offre:', e);
             this.offer = {};
@@ -92,6 +99,9 @@ export default class SrOfferDetail extends NavigationMixin(LightningElement) {
     }
 
     openApply() {
+        if (this.hasAlreadyApplied) {
+            return; // Sécurité supplémentaire
+        }
         sessionStorage.setItem('applyOfferId',   this.offerId);
         sessionStorage.setItem('applyOfferName', this.offer?.Titre__c || '');
         this[NavigationMixin.Navigate]({

@@ -1,0 +1,309 @@
+<template>
+    <div class="home-container">
+
+        <!-- ══════════════════════════════════════════════ -->
+        <!-- HERO SECTION                                   -->
+        <!-- ══════════════════════════════════════════════ -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <div class="hero-badge">🌍 PwC Tunisie</div>
+                <h1 class="hero-title">
+                    Construire la confiance<br/>
+                    <span class="hero-title-accent">
+                        dans la société
+                    </span>
+                </h1>
+                <p class="hero-description">
+                    PwC Tunisie accompagne les entreprises dans leur
+                    transformation avec des services d'audit, de conseil
+                    et de fiscalité. Rejoignez une équipe d'experts
+                    engagés pour un impact durable.
+                </p>
+                <div class="hero-actions">
+                    <button
+                        class="btn-hero-primary"
+                        onclick={handleVoirOffres}>
+                        Voir nos offres d'emploi →
+                    </button>
+                    <button
+                        class="btn-hero-secondary"
+                        onclick={handleScrollDown}>
+                        En savoir plus ↓
+                    </button>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="hero-card-float card-float-1">
+                    <span class="float-icon">📊</span>
+                    <span class="float-text">Audit & Assurance</span>
+                </div>
+                <div class="hero-card-float card-float-2">
+                    <span class="float-icon">💼</span>
+                    <span class="float-text">Advisory</span>
+                </div>
+                <div class="hero-card-float card-float-3">
+                    <span class="float-icon">⚖️</span>
+                    <span class="float-text">Tax & Legal</span>
+                </div>
+                <div class="hero-logo-circle">
+                    <span class="hero-logo-text">PwC</span>
+                    <span class="hero-logo-sub">Tunisie</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════ -->
+        <!-- STATS SECTION                                  -->
+        <!-- ══════════════════════════════════════════════ -->
+        <section class="stats-section">
+            <div class="stats-grid">
+                <template for:each={stats} for:item="stat">
+                    <div key={stat.id} class="stat-card">
+                        <div class="stat-icon">{stat.icon}</div>
+                        <div class="stat-number">{stat.number}</div>
+                        <div class="stat-label">{stat.label}</div>
+                    </div>
+                </template>
+            </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════ -->
+        <!-- ABOUT SECTION                                  -->
+        <!-- ══════════════════════════════════════════════ -->
+        <section class="about-section" data-section="about">
+            <div class="section-header">
+                <span class="section-tag">À propos</span>
+                <h2 class="section-title">
+                    Notre histoire en Tunisie
+                </h2>
+                <div class="section-divider"></div>
+            </div>
+
+            <div class="about-grid">
+                <div class="about-text">
+                    <p class="about-lead">
+                        Depuis plus de <strong>50 ans</strong>, PwC Tunisie
+                        est un acteur majeur du marché des services
+                        professionnels en Afrique du Nord.
+                    </p>
+                    <p class="about-body">
+                        Fondé sur des valeurs d'intégrité, d'excellence
+                        et d'innovation, notre cabinet accompagne les
+                        grandes entreprises, les PME et les institutions
+                        publiques dans leurs défis les plus complexes.
+                    </p>
+                    <p class="about-body">
+                        Membre du réseau mondial PwC présent dans
+                        <strong>157 pays</strong> avec plus de
+                        <strong>364 000 collaborateurs</strong>,
+                        PwC Tunisie allie expertise locale et dimension
+                        internationale pour offrir des solutions à forte
+                        valeur ajoutée.
+                    </p>
+                    <div class="about-values">
+                        <div class="value-chip">✅ Intégrité</div>
+                        <div class="value-chip">🚀 Excellence</div>
+                        <div class="value-chip">🤝 Collaboration</div>
+                        <div class="value-chip">💡 Innovation</div>
+                    </div>
+                </div>
+
+                <div class="about-timeline">
+                    <h3 class="timeline-title">Notre parcours</h3>
+                    <template for:each={timeline} for:item="item">
+                        <div key={item.year} class="timeline-item">
+                            <div class="timeline-dot"></div>
+                            <div class="timeline-content">
+                                <span class="timeline-year">
+                                    {item.year}
+                                </span>
+                                <p class="timeline-text">{item.text}</p>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════ -->
+        <!-- SERVICES SECTION                               -->
+        <!-- ══════════════════════════════════════════════ -->
+        <section class="services-section">
+            <div class="section-header">
+                <span class="section-tag">Nos expertises</span>
+                <h2 class="section-title">Ce que nous faisons</h2>
+                <div class="section-divider"></div>
+            </div>
+
+            <div class="services-grid">
+                <template for:each={services} for:item="svc">
+                    <div key={svc.id} class="service-card">
+                        <div class="service-icon-wrap">
+                            <span class="service-icon">{svc.icon}</span>
+                        </div>
+                        <h3 class="service-title">{svc.title}</h3>
+                        <p class="service-desc">{svc.desc}</p>
+                        <div class="service-tags">
+                            <template for:each={svc.tags} for:item="tag">
+                                <span key={tag} class="service-tag">
+                                    {tag}
+                                </span>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════ -->
+        <!-- WHY JOIN US                                    -->
+        <!-- ══════════════════════════════════════════════ -->
+        <section class="why-section">
+            <div class="why-left">
+                <span class="section-tag section-tag-white">
+                    Rejoindre PwC
+                </span>
+                <h2 class="why-title">
+                    Pourquoi choisir<br/>PwC Tunisie ?
+                </h2>
+                <p class="why-desc">
+                    Nous investissons dans le développement de nos
+                    collaborateurs pour construire ensemble l'avenir
+                    des entreprises tunisiennes et africaines.
+                </p>
+                <button
+                    class="btn-why"
+                    onclick={handleVoirOffres}>
+                    Découvrir nos offres →
+                </button>
+            </div>
+            <div class="why-right">
+                <template for:each={benefits} for:item="b">
+                    <div key={b.id} class="benefit-card">
+                        <div class="benefit-icon">{b.icon}</div>
+                        <div class="benefit-content">
+                            <h4 class="benefit-title">{b.title}</h4>
+                            <p class="benefit-desc">{b.desc}</p>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════ -->
+        <!-- SECTEURS                                       -->
+        <!-- ══════════════════════════════════════════════ -->
+        <section class="sectors-section">
+            <div class="section-header">
+                <span class="section-tag">Industries</span>
+                <h2 class="section-title">Secteurs d'intervention</h2>
+                <div class="section-divider"></div>
+            </div>
+            <div class="sectors-grid">
+                <template for:each={sectors} for:item="s">
+                    <div key={s.id} class="sector-card">
+                        <span class="sector-icon">{s.icon}</span>
+                        <span class="sector-name">{s.name}</span>
+                    </div>
+                </template>
+            </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════ -->
+        <!-- TEMOIGNAGES                                    -->
+        <!-- ══════════════════════════════════════════════ -->
+        <section class="testimonials-section">
+            <div class="section-header">
+                <span class="section-tag">Témoignages</span>
+                <h2 class="section-title">
+                    Ce que disent nos collaborateurs
+                </h2>
+                <div class="section-divider"></div>
+            </div>
+            <div class="testimonials-grid">
+                <template for:each={testimonials} for:item="t">
+                    <div key={t.id} class="testimonial-card">
+                        <div class="testimonial-quote">"</div>
+                        <p class="testimonial-text">{t.text}</p>
+                        <div class="testimonial-author">
+                            <div class="author-avatar">{t.initiales}</div>
+                            <div class="author-info">
+                                <span class="author-name">{t.name}</span>
+                                <span class="author-role">{t.role}</span>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════ -->
+        <!-- CTA SECTION                                    -->
+        <!-- ══════════════════════════════════════════════ -->
+        <section class="cta-section">
+            <div class="cta-content">
+                <h2 class="cta-title">
+                    Prêt à rejoindre l'aventure PwC ?
+                </h2>
+                <p class="cta-desc">
+                    Explorez nos offres d'emploi et postulez dès
+                    aujourd'hui pour construire votre carrière avec nous.
+                </p>
+                <button
+                    class="btn-cta"
+                    onclick={handleVoirOffres}>
+                    🚀 Voir toutes les offres
+                </button>
+            </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════ -->
+        <!-- FOOTER                                         -->
+        <!-- ══════════════════════════════════════════════ -->
+        <footer class="home-footer">
+            <div class="footer-top">
+                <div class="footer-brand">
+                    <div class="footer-logo">PwC</div>
+                    <p class="footer-tagline">
+                        Building trust in society and solving
+                        important problems.
+                    </p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-col">
+                        <h4 class="footer-col-title">Services</h4>
+                        <ul class="footer-list">
+                            <li>Audit & Assurance</li>
+                            <li>Consulting</li>
+                            <li>Tax & Legal</li>
+                            <li>Deals</li>
+                        </ul>
+                    </div>
+                    <div class="footer-col">
+                        <h4 class="footer-col-title">Carrières</h4>
+                        <ul class="footer-list">
+                            <li>Offres d'emploi</li>
+                            <li>Stages & Alternances</li>
+                            <li>Graduate Program</li>
+                            <li>Diversité & Inclusion</li>
+                        </ul>
+                    </div>
+                    <div class="footer-col">
+                        <h4 class="footer-col-title">À propos</h4>
+                        <ul class="footer-list">
+                            <li>Notre histoire</li>
+                            <li>Leadership</li>
+                            <li>Responsabilité sociale</li>
+                            <li>Contact</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <span>© 2024 PwC Tunisie. Tous droits réservés.</span>
+                <span>Politique de confidentialité · Mentions légales</span>
+            </div>
+        </footer>
+
+    </div>
+</template>

@@ -145,6 +145,18 @@
     transform: translateY(-3px);
     box-shadow: 0 8px 24px rgba(0,0,0,0.22);
 }
+.btn-applied {
+    background: #d4edda !important;
+    color: #155724 !important;
+    cursor: default !important;
+    border: 1px solid #c3e6cb !important;
+    opacity: 1;
+}
+.btn-applied:hover {
+    transform: none !important;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18) !important;
+}
+
 .btn-postuler_side {
     width: 100%;
     background: linear-gradient(135deg, #D04A02, #e05a10);
@@ -255,6 +267,23 @@
     margin: 0 0 20px;
     font-weight: 500;
 }
+.applied-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px dashed rgba(255, 255, 255, 0.3);
+}
+.applied-text {
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+}
+
 
 /* EMPTY */
 .empty-state {

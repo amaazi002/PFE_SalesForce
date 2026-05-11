@@ -113,4 +113,40 @@ public with sharing class SR_OfferController {
 
         return out;
     }
+
+    @AuraEnabled(cacheable=false)
+    public static Boolean checkIfApplied(Id offreId) {
+        if (offreId == null) return false;
+        
+        try {
+            // 1. Récupérer le contact de l'utilisateur courant
+            List<User> users = [
+                SELECT Id, ContactId 
+                FROM User 
+                WHERE Id = :UserInfo.getUserId() 
+                LIMIT 1
+            ];
+            
+            if (users.isEmpty() || users[0].ContactId == null) {
+                return false;
+            }
+            
+            Id contactId = users[0].ContactId;
+            
+            // 2. Vérifier si une candidature existe déjà
+            List<Candidature__c> apps = [
+                SELECT Id 
+                FROM Candidature__c 
+                WHERE Offre__c = :offreId 
+                AND Candidat__c = :contactId 
+                LIMIT 1
+            ];
+            
+            return !apps.isEmpty();
+            
+        } catch (Exception e) {
+            System.debug('Error checking if applied: ' + e.getMessage());
+            return false;
+        }
+    }
 }

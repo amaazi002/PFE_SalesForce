@@ -67,9 +67,16 @@
                         </div>
                     </div>
                     <div class="hero__cta">
-                        <button class="btn-postuler" onclick={openApply}>
-                            Postuler maintenant
-                        </button>
+                        <template if:false={hasAlreadyApplied}>
+                            <button class="btn-postuler" onclick={openApply}>
+                                Postuler maintenant
+                            </button>
+                        </template>
+                        <template if:true={hasAlreadyApplied}>
+                            <button class="btn-postuler btn-applied" disabled>
+                                ✓ Déjà postulé
+                            </button>
+                        </template>
                     </div>
                 </div>
 
@@ -116,14 +123,28 @@
                         </template>
 
                         <div class="cta-bottom">
-                            <p class="cta-text">
-                                Ce poste vous correspond ? N'attendez plus !
-                            </p>
-                            <button
-                                class="btn-postuler btn-postuler_large"
-                                onclick={openApply}>
-                                Postuler à cette offre
-                            </button>
+                            <template if:false={hasAlreadyApplied}>
+                                <p class="cta-text">
+                                    Ce poste vous correspond ? N'attendez plus !
+                                </p>
+                                <button
+                                    class="btn-postuler btn-postuler_large"
+                                    onclick={openApply}>
+                                    Postuler à cette offre
+                                </button>
+                            </template>
+                            <template if:true={hasAlreadyApplied}>
+                                <div class="applied-info">
+                                    <lightning-icon
+                                        icon-name="utility:check"
+                                        size="small"
+                                        variant="success">
+                                    </lightning-icon>
+                                    <p class="applied-text">
+                                        Vous avez déjà postulé à cette offre.
+                                    </p>
+                                </div>
+                            </template>
                         </div>
 
                     </div>
